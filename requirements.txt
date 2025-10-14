@@ -1,0 +1,16 @@
+# Datapizza AI Framework
+datapizza-ai>=0.0.2
+datapizza-ai-clients-openai>=0.0.3
+datapizza-ai-embedders-openai>=0.0.3
+datapizza-ai-vectorstores-qdrant>=0.0.2
+datapizza-ai-core>=0.0.2
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Vector database
+qdrant-client>=1.15.0
+
+# OpenAI client
+openai>=1.100.0
+

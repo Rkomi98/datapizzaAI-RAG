@@ -1,158 +1,249 @@
+# Datapizza-AI FAQ (Video)
 
---------------------------------------------------------------------------------
-id: faq_002category: frameworktags: [framework, client, integrazioni, standard]updated: 2025-10-14status: answeredlanguage: it
-Q: Ci sono differenze o somiglianze nel modo in cui l'astrazione dei client provider è gestita in Datapizza-AI rispetto ad altri framework?
-A:
-A grandi linee, per quanto riguarda la parte client, questo approccio è lo standard nel settore, nel senso che qualunque framework GenAI dà la possibilità di fare l'astrazione sui client
-.
+---
+id: faq_002
+category: framework
+tags: [framework, client, integrazioni, standard]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_003category: integrazionitags: [llm, open-source, llama, client, compatibilità]updated: 2025-10-14status: answeredlanguage: it
-Q: Datapizza-AI funziona con modelli Llama?
-A:
-Sì, il framework supporta anche Llama
-. All'interno della documentazione (su doc.datapizza.ai), è possibile trovare come eseguire un client Llama o un server Llama in locale
-.
+### Q: Ci sono differenze o somiglianze nel modo in cui l'astrazione dei client provider è gestita in Datapizza-AI rispetto ad altri framework?
 
---------------------------------------------------------------------------------
-id: faq_004category: frameworktags: [integrazioni, vectorstore, roadmo, grafana, database]updated: 2025-10-14status: answeredlanguage: it
-Q: Datapizza-AI supporta anche Grafana (come Vector Store)?
-A:
-Non supportiamo nativamente Grafana per ora, ma è in pipeline, quindi è nella roadmap del progetto
-.
+**A:**  
+A grandi linee, per quanto riguarda la parte client, questo approccio è lo standard nel settore: qualunque framework GenAI propone un layer di astrazione sui client.
 
---------------------------------------------------------------------------------
-id: faq_005category: ragtags: [rag, documenti, parser, open-source, integrazioni, azure, dockling]updated: 2025-10-14status: answeredlanguage: it
-Q: Perché Datapizza-AI ha scelto di includere Dockling come parser per i documenti, e quali sono i vantaggi rispetto a soluzioni come Azure Document Intelligence?
-A:
-Il team di Datapizza usa spesso Document Intelligence di Azure internamente, assieme ad altri LLM, e sono le due soluzioni incluse nel framework
-. Hanno scelto di includere Dockling perché volevano avere una pipeline che fosse fruibile da tutti. Non potevano rilasciare un framework con un unico parser a pagamento, e Dockling è risultato essere uno dei migliori tra i framework open source provati, garantendo una soluzione open per l'estrazione
-.
+---
+id: faq_003
+category: integrazioni
+tags: [llm, open-source, llama, client, compatibilità]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_006category: ragtags: [rag, chunking, splitter, moduli, avanzato]updated: 2025-10-14status: answeredlanguage: it
-Q: Ci sono moduli che integrano tecniche di chunking avanzate?
-A:
-Il chunking viene fatto principalmente dai parser
-. Tuttavia, nel framework esistono diversi splitter che permettono di fare cose diverse dopo l'output del parser. Il framework è molto semplice e aperto, tanto che si incoraggia a sviluppare il proprio splitter custom
-.
+### Q: Datapizza-AI funziona con modelli Llama?
 
---------------------------------------------------------------------------------
-id: faq_007category: ragtags: [rag, chunking, splitter, documentazione, supporto]updated: 2025-10-14status: answeredlanguage: it
-Q: Sarebbe utile un modulo che aiuti a scegliere meglio gli splitter per il chunking?
-A:
-Il team ha pensato a un tale modulo, ma ha deciso di non includerlo
-. L'idea è che gli splitter sono veramente pochi e semplici da utilizzare, e si presuppone che la documentazione sia scritta abbastanza bene da non necessitare di uno strumento di supporto per la scelta
-.
+**A:**  
+Sì, il framework supporta anche Llama. All'interno della documentazione (su doc.datapizza.ai) è possibile trovare le istruzioni per eseguire un client Llama o un server Llama in locale.
 
---------------------------------------------------------------------------------
-id: faq_008category: privacytags: [privacy, gpt, gdpr, locale, modelli, lama, azure]updated: 2025-10-14status: answeredlanguage: it
-Q: Per la gestione dei documenti aziendali (contenuto molto tecnico), posso interrogare i miei documenti in locale senza paure che possano essere usati i dati sensibili?
-A:
-Sì, questo è possibile, a patto che si utilizzi un modello locale
-. Grazie al fatto che il framework integra il client Lama, è possibile ospitare il proprio modello (come Mistral o Llama) in locale ed eseguire tutte le operazioni lì. Se si rimane in locale, il documento non lascia la macchina
-.
-È anche importante notare che il framework include il client Azure Open AI, che permette di utilizzare i modelli di Open AI che girano su un server Azure, i quali sono di solito GDPR compliant e ospitati in Europa
-.
+---
+id: faq_004
+category: framework
+tags: [integrazioni, vectorstore, roadmap, grafana, database]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_009category: frameworktags: [framework, stregatto, competizione, chatbot, obiettivi]updated: 2025-10-14status: answeredlanguage: it
-Q: Qual è la differenza tra Datapizza-AI e il framework Stregatto?
-A:
-Il framework Stregatto non è visto in competizione con Datapizza-AI
-. Stregatto si rivolge principalmente a persone che hanno bisogno di sviluppare dei chatbot in modo molto rapido e veloce. Datapizza-AI, pur potendo essere usato per un chatbot (la demo ne ha mostrato uno con 32 righe di codice), ha potenzialità infinite e permette di sviluppare qualunque tipo di applicativo, non solo chatbot. Si ritiene che servano due nicchie diverse
-.
+### Q: Datapizza-AI supporta anche Grafana (come Vector Store)?
 
---------------------------------------------------------------------------------
-id: faq_010category: pipelinetags: [pipeline, dag, airflow, integrazioni, dipendenze]updated: 2025-10-14status: answeredlanguage: it
-Q: Avete previsto l'integrazione con Airflow?
-A:
-Non è stata implementata l'integrazione con Airflow perché il team non ha avuto la necessità di farlo
-. L'idea era di evitare di legarsi a un provider o un software esterno (non proprio) di cui si devono imparare le astrazioni, come è successo con i framework GenAI preesistenti. La scelta è stata di sviluppare internamente le Pipeline (come la DAG Pipeline). È possibile che in futuro venga implementato il supporto
-.
+**A:**  
+Non supportiamo nativamente Grafana per ora, ma è in pipeline e rientra nella roadmap del progetto.
 
---------------------------------------------------------------------------------
-id: faq_011category: pipelinetags: [pipeline, dag, langgraph, confronto, complessità]updated: 2025-10-14status: answeredlanguage: it
-Q: Il concetto di DAG Pipeline è simile a quello dei grafi di LangChain (LangGraph)?
-A:
-Secondo il team, le due soluzioni non competono sullo stesso livello
-. La DAG Pipeline di Datapizza AI è stata pensata per essere molto grezza e permette di andare "molto nel piccolo" per capire le dipendenze di ogni modulo. Non ha moltissime feature. LangGraph, invece, potrebbe essere considerato un ecosistema più evoluto e grande
-.
+---
+id: faq_005
+category: rag
+tags: [rag, documenti, parser, open-source, integrazioni, azure, dockling]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_012category: frameworktags: [casi d'uso, rag, agenti, multi-agente, delivery]updated: 2025-10-14status: answeredlanguage: it
-Q: Quali sono gli esempi di utilizzi concreti di questo framework?
-A:
-Il framework è stato creato per sviluppare use case che abbiano un impatto vero e siano rilasciabili in produzione
-.
-Esempi di utilizzi concreti includono
-:
-1. Sistemi RAG (Retrieval Augmented Generation): Un modello generativo che risponde basandosi su informazioni pescate da una base di conoscenza aziendale (come PDF o file Excel)
-.
-2. Sistemi Multi-Agente:
-    ◦ Agenti che collaborano per analizzare dati presenti su file Excel o database, con agenti specializzati nel recupero dati, e un agente specializzato nel creare visualizzazioni grafiche per spiegare l'analisi
-.
-    ◦ Agenti che collaborano per scrivere blog post ottimizzati per la SEO, basati su fonti web (agenti specializzati nel recupero dati, nella creazione del draft e nell'ottimizzazione SEO)
-.
+### Q: Perché Datapizza-AI ha scelto di includere Dockling come parser per i documenti, e quali sono i vantaggi rispetto a soluzioni come Azure Document Intelligence?
 
---------------------------------------------------------------------------------
-id: faq_013category: monitoringtags: [costi, token, monitoring, tracking, file di configurazione]updated: 2025-10-14status: answeredlanguage: it
-Q: Avete pensato a un layer di tracking costi per monitorare i token usage per tenant o utente in tempo reale?
-A:
-Il sistema di tracing e monitoring attuale mostra già i token usati in input e in output, oltre alla durata e alla latenza delle chiamate
-.
-È stata discussa la possibilità di aggiungere un meccanismo che, tramite un file di configurazione, permetta di calcolare automaticamente i costi
-. Questo approccio è preferito perché i costi dei provider cambiano nel tempo, e hardcodare i costi nel framework non avrebbe senso
-.
+**A:**  
+Il team di Datapizza usa spesso Document Intelligence di Azure internamente, insieme ad altri LLM, e sono le due soluzioni incluse nel framework. È stato scelto Dockling per avere una pipeline fruibile da tutti: non si poteva rilasciare un framework con un unico parser a pagamento e Dockling è risultato fra i migliori framework open source provati, garantendo una soluzione aperta per l'estrazione.
 
---------------------------------------------------------------------------------
-id: faq_014category: clienttags: [client, api, openai, parametri specifici, customizzazione]updated: 2025-10-14status: answeredlanguage: it
-Q: Come vengono gestiti i parametri specifici di un provider, come ad esempio il  di Open AI?
-A:
-Il framework è stato costruito per lasciare la libertà di aggiungere argomenti che non sono necessariamente in comune con tutti i client
-. Parametri come il previous_response_ID (che è puramente di Open AI) possono essere aggiunti durante la chiamata e verranno inseriti nella richiesta al provider
-.
+---
+id: faq_006
+category: rag
+tags: [rag, chunking, splitter, moduli, avanzato]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_015category: evaluationtags: [evaluation, testing, metriche, sviluppo, retrieval, llm_judges]updated: 2025-10-14status: answeredlanguage: it
-Q: Il framework ha strumenti pensati per facilitare e velocizzare l'evaluation dei modelli/risposte?
-A:
-Sì, l'evaluation è uno dei pilastri su cui si basa il team di Ricerca e Sviluppo (R&D) per la GenAI
-. Tuttavia, le funzionalità di evaluation non sono state ancora rilasciate come open source perché non sono state reputate abbastanza mature
-.
-Queste funzionalità, che sono presenti nel repository interno, includono metriche per la fase di retrieval in una RAG e strumenti come gli LLM judges per valutare le risposte finali dei modelli
-.
+### Q: Ci sono moduli che integrano tecniche di chunking avanzate?
 
---------------------------------------------------------------------------------
-id: faq_016category: clienttags: [client, thinking_budget, google, parametri specifici, ragionamento]updated: 2025-10-14status: answeredlanguage: it
-Q: Datapizza-AI supporta anche il thinking budget di Google?
-A:
-Sì, come per altri parametri opzionali specifici di un provider, viene lasciata la possibilità di aggiungere parametri come il thinking budget
-.
-(Nota: il  è un parametro che specifica il livello di profondità a cui il modello deve "pensare" o ragionare prima di dare una risposta, influenzando tempo e token spesi in )
-.
+**A:**  
+Il chunking viene svolto principalmente dai parser. Tuttavia, nel framework esistono diversi splitter che consentono di eseguire operazioni differenti sull'output del parser e si incoraggia la creazione di splitter personalizzati.
 
---------------------------------------------------------------------------------
-id: faq_017category: agentitags: [agenti, strumenti_visuali, nocode, lowcode, controllo, vendor_lockin]updated: 2025-10-14status: answeredlanguage: it
-Q: Quali sono i vantaggi di usare Datapizza-AI rispetto all'utilizzo di tool visuali (no code/low code) per agenti conversazionali, come Flowwise o Agent Builder di Open AI?
-A:
-Gli strumenti visuali (no code/low code) sono utili per automazioni semplici, a basso rischio, o per fare un esperimento rapido, specialmente per persone con un background non tecnico (come un marketer per scrivere blog post)
-.
-Tuttavia, questi strumenti storicamente si limitano e si fermano oltre un certo genere di attività, offrendo un controllo limitato
-.
-Datapizza-AI, invece, è stato progettato per
-:
-1. Massima Potenza e Controllo: Dare il massimo controllo a un ingegnere per sviluppare soluzioni completamente custom sui propri documenti o per eseguire azioni specifiche, specialmente per problemi complessi o progetti critici
-.
-2. Anti-Vendor Lock-in: Gli strumenti dei grandi vendor (Google, Open AI, Microsoft) hanno sempre un incentivo a creare lock-in all'interno del proprio ecosistema
-. Il principio fondamentale di Datapizza AI è l'opposto: essere aperto e completamente agnostico rispetto ai framework e ai provider
-.
-3. Velocità di Apprendimento: È pensato per essere talmente intuitivo e semplice da imparare che si ritiene possa essere più veloce imparare a usare il framework che le interfacce grafiche complesse dei vendor
-.
+---
+id: faq_007
+category: rag
+tags: [rag, chunking, splitter, documentazione, supporto]
+updated: 2025-10-14
+status: answered
+language: it
+---
 
---------------------------------------------------------------------------------
-id: faq_018category: agentitags: [contesto, memory, bloat, compressione, state_management]updated: 2025-10-14status: answeredlanguage: it
-Q: Come gestite il bloat del contesto quando cresce troppo (ad esempio, con più agenti che si passano informazioni)? C'è un meccanismo di compressione del contesto o di state management ottimizzato?
-A:
-Questa è una tematica cruciale su cui il team di sviluppo sta attualmente lavorando
-. Al momento, non è presente nativamente su Datapizza AI un modo per comprimere o fare una selezione ottimizzata dei turni di conversazione nella memory. Tuttavia, l'obiettivo è studiare la soluzione più efficace e implementarla presto nel framework.
+### Q: Sarebbe utile un modulo che aiuti a scegliere meglio gli splitter per il chunking?
+
+**A:**  
+Il team ha valutato l'idea di creare un modulo dedicato, ma ha deciso di non includerlo. Gli splitter sono pochi e semplici da utilizzare e la documentazione è pensata per guidare la scelta senza bisogno di strumenti aggiuntivi.
+
+---
+id: faq_008
+category: privacy
+tags: [privacy, gpt, gdpr, locale, modelli, llama, azure]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Per la gestione dei documenti aziendali (contenuto molto tecnico), posso interrogare i miei documenti in locale senza timore che vengano usati dati sensibili?
+
+**A:**  
+Sì, è possibile, a patto di utilizzare un modello locale. Grazie all'integrazione del client Llama, è possibile ospitare un modello (ad esempio Mistral o Llama) in locale ed eseguire tutte le operazioni sulla propria macchina, evitando che i documenti lascino l'ambiente interno. È anche importante notare che il framework include il client Azure Open AI, che permette di utilizzare i modelli OpenAI in esecuzione su server Azure, generalmente GDPR compliant e ospitati in Europa.
+
+---
+id: faq_009
+category: framework
+tags: [framework, stregatto, competizione, chatbot, obiettivi]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Qual è la differenza tra Datapizza-AI e il framework Stregatto?
+
+**A:**  
+Il framework Stregatto non è considerato un competitor diretto di Datapizza-AI. Stregatto punta a chi deve sviluppare chatbot in modo rapido, mentre Datapizza-AI, pur potendo essere usato per un chatbot (la demo lo mostra con 32 righe di codice), è progettato per coprire un ampio ventaglio di applicazioni e supportare progetti complessi.
+
+---
+id: faq_010
+category: pipeline
+tags: [pipeline, dag, airflow, integrazioni, dipendenze]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Avete previsto l'integrazione con Airflow?
+
+**A:**  
+Non è stata implementata l'integrazione con Airflow perché il team non ne ha avvertito l'esigenza. L'obiettivo era evitare dipendenze da software esterni con astrazioni proprie, preferendo sviluppare internamente le Pipeline (come la DAG Pipeline). In futuro si valuterà se aggiungere il supporto.
+
+---
+id: faq_011
+category: pipeline
+tags: [pipeline, dag, langgraph, confronto, complessità]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Il concetto di DAG Pipeline è simile a quello dei grafi di LangChain (LangGraph)?
+
+**A:**  
+Secondo il team le due soluzioni non competono sullo stesso piano. La DAG Pipeline di Datapizza-AI è volutamente essenziale per comprendere le dipendenze tra i moduli, mentre LangGraph può essere considerato un ecosistema più ricco di funzionalità.
+
+---
+id: faq_012
+category: framework
+tags: [casi_d'uso, rag, agenti, multi-agente, delivery]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Quali sono gli esempi di utilizzi concreti di questo framework?
+
+**A:**  
+Il framework nasce per realizzare use case ad alto impatto, pronti per la produzione.  
+Esempi concreti includono:  
+1. Sistemi RAG (Retrieval Augmented Generation) in cui un modello generativo risponde basandosi su informazioni tratte da basi di conoscenza aziendali (ad esempio PDF o file Excel).  
+2. Sistemi multi-agente, come:  
+   - Agenti che collaborano per analizzare dati presenti su file Excel o database, con ruoli specializzati per il recupero dati e per la creazione di visualizzazioni.  
+   - Agenti che collaborano per scrivere blog post ottimizzati per la SEO, basandosi su fonti web con ruoli dedicati al recupero dati, alla stesura del draft e all'ottimizzazione SEO.
+
+---
+id: faq_013
+category: monitoring
+tags: [costi, token, monitoring, tracking, configurazione]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Avete pensato a un layer di tracking costi per monitorare il consumo di token per tenant o utente in tempo reale?
+
+**A:**  
+Il sistema di tracing e monitoring attuale mostra già i token usati in input e in output, oltre alla durata e alla latenza delle chiamate. È stata discussa l'aggiunta di un meccanismo basato su file di configurazione per calcolare automaticamente i costi, così da evitare valori hardcoded che diventerebbero obsoleti quando i provider aggiornano i listini.
+
+---
+id: faq_014
+category: client
+tags: [client, api, openai, parametri_specifici, customizzazione]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Come vengono gestiti i parametri specifici di un provider, come ad esempio il `previous_response_id` di OpenAI?
+
+**A:**  
+Il framework è stato progettato per permettere l'aggiunta di argomenti che non sono condivisi da tutti i client. Parametri come il `previous_response_id` (tipico di OpenAI) possono essere passati alla chiamata e verranno inoltrati correttamente al provider.
+
+---
+id: faq_015
+category: evaluation
+tags: [evaluation, testing, metriche, sviluppo, retrieval, llm_judges]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Il framework ha strumenti pensati per facilitare e velocizzare l'evaluation dei modelli e delle risposte?
+
+**A:**  
+L'evaluation è uno dei pilastri del team di Ricerca e Sviluppo dedicato alla GenAI, ma le funzionalità non sono ancora state rilasciate come open source perché considerate immature. Internamente esistono metriche per la fase di retrieval in una RAG e strumenti come gli LLM judges per valutare le risposte finali, che verranno pubblicati quando saranno pronti.
+
+---
+id: faq_016
+category: client
+tags: [client, thinking_budget, google, parametri_specifici, ragionamento]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Datapizza-AI supporta anche il thinking budget di Google?
+
+**A:**  
+Sì, come per altri parametri opzionali specifici di un provider, è possibile aggiungere parametri come il thinking budget.  
+(Nota: il thinking budget è un parametro che indica quanto in profondità il modello deve ragionare prima di rispondere, influenzando tempo e token utilizzati.)
+
+---
+id: faq_017
+category: agenti
+tags: [agenti, strumenti_visuali, nocode, lowcode, controllo, vendor_lockin]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Quali sono i vantaggi di usare Datapizza-AI rispetto a tool visuali (no code/low code) per agenti conversazionali, come Flowwise o Agent Builder di OpenAI?
+
+**A:**  
+Gli strumenti visuali (no code/low code) sono utili per automazioni semplici, a basso rischio, o per prove rapide, soprattutto per persone con background non tecnico. Tuttavia, tendono a limitarsi quando la complessità aumenta e offrono un controllo ridotto.  
+Datapizza-AI, invece, è stato progettato per garantire:  
+1. Massima potenza e controllo, fornendo a un ingegnere tutto il necessario per sviluppare soluzioni completamente custom su documenti proprietari o per automatizzare azioni specifiche nei casi d'uso più complessi.  
+2. Anti vendor lock-in, adottando un approccio aperto e agnostico rispetto a framework e provider, in contrasto con gli ecosistemi proprietari dei grandi vendor.  
+3. Velocità di apprendimento, perché l'interfaccia del framework è pensata per essere più rapida da padroneggiare rispetto alle interfacce grafiche complesse dei vendor.
+
+---
+id: faq_018
+category: agenti
+tags: [contesto, memory, bloat, compressione, state_management]
+updated: 2025-10-14
+status: answered
+language: it
+---
+
+### Q: Come gestite il bloat del contesto quando cresce troppo (ad esempio con più agenti che si scambiano informazioni)? C'è un meccanismo di compressione del contesto o di state management ottimizzato?
+
+**A:**  
+È un tema cruciale su cui il team sta lavorando. Al momento non esiste in Datapizza-AI un sistema nativo per comprimere o selezionare in modo ottimizzato i turni di conversazione nella memory, ma l'obiettivo è individuare la soluzione più efficace e integrarla presto nel framework.
