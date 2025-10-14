@@ -61,10 +61,9 @@ class FAQChatbot:
         """Configura la DagPipeline per il retrieval e la generazione."""
         self.retriever = self._setup_vectorstore()
         
-        # Template per il prompt
-        self.prompt_template = ChatPromptTemplate(
-            system_prompt="""Sei un assistente esperto di Datapizza-AI, un framework Python per applicazioni GenAI.
-            
+        # System prompt da aggiungere alla configurazione del client
+        self.system_prompt = """Sei un assistente esperto di Datapizza-AI, un framework Python per applicazioni GenAI.
+
 Il tuo compito è rispondere alle domande degli utenti basandoti ESCLUSIVAMENTE sulle FAQ fornite.
 
 REGOLE IMPORTANTI:
@@ -73,7 +72,10 @@ REGOLE IMPORTANTI:
 3. Non inventare informazioni che non sono nelle FAQ
 4. Puoi citare le FAQ specifiche se utile
 5. Mantieni un tono professionale e amichevole
-6. Rispondi in italiano""",
+6. Rispondi in italiano"""
+        
+        # Template per il prompt (senza system_prompt nel costruttore)
+        self.prompt_template = ChatPromptTemplate(
             user_prompt_template="Domanda dell'utente: {{user_prompt}}",
             retrieval_prompt_template="""
 Informazioni dalle FAQ:
@@ -122,18 +124,35 @@ Informazioni dalle FAQ:
                     "collection_name": "datapizza_faq",
                     "k": k
                 },
-                "generator": {"input": question}
+                "generator": {
+                    "input": question,
+                    "system_prompt": self.system_prompt
+                }
             })
             
-            # Estrai la risposta
-            response = result.get("generator", "")
+            # Estrai la risposta dal generator
+            generator_result = result.get("generator")
             
-            # Verifica se sono stati trovati risultati rilevanti
-            chunks = result.get("retriever", [])
-            if not chunks or all(getattr(chunk, 'score', 1.0) < score_threshold for chunk in chunks):
-                return "Non sono ancora state fatte domande a riguardo."
+            # Il generator restituisce un ClientResponse object che contiene blocks
+            response_text = ""
+            if hasattr(generator_result, 'content'):
+                # ClientResponse ha un attributo content che è una lista di blocks
+                content = generator_result.content
+                if isinstance(content, list):
+                    # Estrai il testo da ogni TextBlock
+                    for block in content:
+                        if hasattr(block, 'content'):
+                            response_text += block.content
+                        elif isinstance(block, str):
+                            response_text += block
+                else:
+                    response_text = str(content)
+            elif isinstance(generator_result, str):
+                response_text = generator_result
+            else:
+                response_text = str(generator_result)
             
-            return response
+            return response_text.strip()
             
         except Exception as e:
             print(f"⚠ Errore durante l'elaborazione: {e}")

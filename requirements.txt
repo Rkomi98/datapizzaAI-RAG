@@ -14,3 +14,6 @@ qdrant-client>=1.15.0
 # OpenAI client
 openai>=1.100.0
 
+# Web interface
+streamlit>=1.28.0
+

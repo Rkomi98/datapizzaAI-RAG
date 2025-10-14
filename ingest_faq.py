@@ -66,8 +66,14 @@ def ingest_documents(pipeline, faq_files):
         
         try:
             print(f"📄 Processando {faq_file}...")
+            
+            # Leggi il contenuto del file
+            with open(faq_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Il TextParser si aspetta una stringa, non un filepath
             pipeline.run(
-                faq_file, 
+                content, 
                 metadata={
                     "source": faq_file,
                     "type": "faq",
@@ -77,6 +83,8 @@ def ingest_documents(pipeline, faq_files):
             print(f"✓ {faq_file} processato con successo")
         except Exception as e:
             print(f"✗ Errore nel processare {faq_file}: {e}")
+            import traceback
+            traceback.print_exc()
 
 def main():
     """Funzione principale per l'ingestion."""

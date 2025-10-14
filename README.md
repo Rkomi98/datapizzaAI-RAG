@@ -11,12 +11,14 @@ Questo progetto implementa un sistema RAG (Retrieval-Augmented Generation) compl
 
 ## ✨ Caratteristiche
 
+- 🌐 **Interfaccia web moderna** con Streamlit - UI pulita e intuitiva
 - 🔍 **Retrieval semantico** con embeddings OpenAI
 - 🧠 **Query rewriting** per migliorare il retrieval
 - 💾 **Vector store** Qdrant per memorizzazione efficiente
 - 🤖 **Generazione risposte** con GPT-4o-mini
-- 💬 **Interfaccia interattiva** da terminale
+- 💬 **Doppia interfaccia** - Web e terminale
 - 📝 **Pipeline modulare** facilmente estensibile
+- 🎨 **Design minimal** e user-friendly
 
 ## 🏗️ Architettura
 
@@ -32,51 +34,66 @@ Query Utente → ToolRewriter → Embedder → VectorStore Retrieval → Prompt 
 
 ## 🚀 Quick Start
 
-### 1. Attiva l'environment virtuale
+### Opzione A: Interfaccia Web (Consigliata) 🌐
 
 ```bash
+# 1. Attiva l'environment
 source rag/bin/activate
+
+# 2. Configura .env con la tua API key OpenAI
+
+# 3. Avvia Qdrant (terminale separato)
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+
+# 4. Avvia il frontend web
+./run_web.sh
+# oppure: streamlit run app.py
 ```
 
-### 2. Installa le dipendenze (se necessario)
+L'interfaccia web si aprirà automaticamente nel browser! 🎉
+
+### Opzione B: Terminale 💻
 
 ```bash
+# 1. Attiva l'environment
+source rag/bin/activate
+
+# 2. Configura .env con la tua API key OpenAI
+
+# 3. Avvia Qdrant (terminale separato)
+docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+
+# 4. Avvia il chatbot da terminale
+python chatbot_faq.py
+# oppure: ./run_chatbot.sh
+```
+
+### Setup Completo (Prima Volta)
+
+```bash
+# 1. Attiva l'environment virtuale
+source rag/bin/activate
+
+# 2. Installa le dipendenze
 pip install -r requirements.txt
-```
 
-### 3. Configura le variabili d'ambiente
-
-Crea un file `.env` e inserisci la tua OpenAI API key:
-
-```bash
+# 3. Configura le variabili d'ambiente
 cp .env.example .env
 # Modifica .env e inserisci la tua API key
-```
 
-### 4. Avvia Qdrant
-
-```bash
+# 4. Avvia Qdrant
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
-```
 
-### 5. Verifica il setup
-
-```bash
+# 5. Verifica il setup
 python test_setup.py
-```
 
-### 6. Esegui l'ingestion delle FAQ
-
-```bash
+# 6. Esegui l'ingestion delle FAQ
 python ingest_faq.py
-```
 
-### 7. Avvia il chatbot
-
-```bash
-python chatbot_faq.py
-# oppure usa lo script bash
-./run_chatbot.sh
+# 7. Avvia il chatbot (web o terminale)
+./run_web.sh          # Interfaccia web
+# oppure
+python chatbot_faq.py # Terminale
 ```
 
 ## 💡 Esempi di Utilizzo
@@ -103,22 +120,30 @@ Llama o un server Llama in locale...
 
 ```
 datapizzaAI-RAG/
-├── datapizza_faq.md          # FAQ generali su Datapizza-AI
-├── FAQ_Video.md              # FAQ estratte da video tutorial
-├── ingest_faq.py             # Script per processare e ingerire FAQ
-├── chatbot_faq.py            # Chatbot RAG interattivo
-├── test_setup.py             # Script per verificare il setup
-├── run_chatbot.sh            # Script bash per avviare il chatbot
-├── requirements.txt          # Dipendenze Python
-├── .env                      # Configurazione (da creare)
-├── .env.example              # Template per configurazione
-├── setup_instructions.md     # Istruzioni dettagliate
-└── README.md                 # Questo file
+├── app.py                    # 🌐 Frontend web (Streamlit) - NUOVO!
+├── chatbot_faq.py            # 🤖 Chatbot RAG core
+├── ingest_faq.py             # 📥 Script per ingestion FAQ
+├── datapizza_faq.md          # 📄 FAQ generali su Datapizza-AI
+├── FAQ_Video.md              # 🎥 FAQ estratte da video tutorial
+├── test_setup.py             # ✅ Script per verificare il setup
+├── test_chatbot.py           # 🧪 Test automatici
+├── check_qdrant.py           # 🔍 Verifica contenuto Qdrant
+├── run_web.sh                # 🌐 Avvio rapido frontend web - NUOVO!
+├── run_chatbot.sh            # 💻 Avvio rapido terminale
+├── requirements.txt          # 📦 Dipendenze Python
+├── .env                      # 🔐 Configurazione (da creare)
+├── .env.example              # 📋 Template configurazione
+├── .gitignore                # 🚫 Esclusioni Git
+├── README.md                 # 📖 Questo file
+├── QUICK_START.md            # ⚡ Guida avvio rapido
+├── USAGE_GUIDE.md            # 📚 Guida utente dettagliata
+└── setup_instructions.md     # 🛠️ Istruzioni setup complete
 ```
 
 ## 🛠️ Tecnologie Utilizzate
 
 - **[Datapizza-AI](https://docs.datapizza.ai/)** - Framework GenAI modulare
+- **[Streamlit](https://streamlit.io/)** - Framework per interfaccia web interattiva
 - **[OpenAI](https://openai.com/)** - Embeddings (text-embedding-3-small) e LLM (gpt-4o-mini)
 - **[Qdrant](https://qdrant.tech/)** - Vector database per similarity search
 - **Python 3.13+** - Linguaggio di programmazione

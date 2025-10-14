@@ -76,10 +76,13 @@ def check_qdrant():
     
     try:
         import httpx
-        response = httpx.get('http://localhost:6333/health', timeout=5.0)
+        # Qdrant risponde sull'endpoint root con le informazioni sulla versione
+        response = httpx.get('http://localhost:6333/', timeout=5.0)
         
         if response.status_code == 200:
-            print("✅ Qdrant è in esecuzione e raggiungibile")
+            data = response.json()
+            version = data.get('version', 'unknown')
+            print(f"✅ Qdrant è in esecuzione (versione {version})")
             return True
         else:
             print(f"⚠️  Qdrant risponde ma con status code: {response.status_code}")
