@@ -1,47 +1,94 @@
 """
 Script per l'ingestion delle FAQ nel vector store.
 Processa i file markdown delle FAQ e li inserisce in Qdrant.
+Utilizza Google Embedder per generare gli embeddings.
 """
 
 import os
+
 from dotenv import load_dotenv
+from qdrant_client import models as qdrant_models
+
 from datapizza.core.vectorstore import VectorConfig
 from datapizza.embedders import ChunkEmbedder
-from datapizza.embedders.openai import OpenAIEmbedder
+from datapizza.embedders.google import GoogleEmbedder
 from datapizza.modules.parsers import TextParser
 from datapizza.modules.splitters import NodeSplitter
 from datapizza.pipeline import IngestionPipeline
-from datapizza.vectorstores.qdrant import QdrantVectorstore
+
+from qdrant_config import (
+    COLLECTION_NAME,
+    EMBEDDING_DIM,
+    build_qdrant_vectorstore,
+    describe_qdrant_target,
+)
 
 # Carica variabili d'ambiente
 load_dotenv()
 
+
+def _extract_vector_dimensions(collection_info: qdrant_models.CollectionInfo) -> dict[str, int]:
+    """Return the dense vector dimensions configured on the collection."""
+    dims: dict[str, int] = {}
+    vectors_cfg = collection_info.config.params.vectors
+
+    if isinstance(vectors_cfg, qdrant_models.VectorParams):
+        dims["default"] = vectors_cfg.size
+    elif isinstance(vectors_cfg, dict):
+        for name, params in vectors_cfg.items():
+            if isinstance(params, qdrant_models.VectorParams):
+                dims[name] = params.size
+    return dims
+
+
 def setup_vectorstore():
-    """Configura e crea la collection nel vector store."""
-    vectorstore = QdrantVectorstore(
-        host="localhost",
-        port=6333
-    )
+    """Configura e crea la collection nel vector store.
     
-    # Crea la collection se non esiste
+    Nota: Google text-embedding-004 usa 768 dimensioni.
+    """
+    vectorstore = build_qdrant_vectorstore()
+
+    client = vectorstore.get_client()
+
+    print(f"🔗 Target Qdrant: {describe_qdrant_target()}")
+
     try:
-        vectorstore.create_collection(
-            "datapizza_faq",
-            vector_config=[VectorConfig(name="embedding", dimensions=1536)]
-        )
-        print("✓ Collection 'datapizza_faq' creata con successo")
+        if client.collection_exists(COLLECTION_NAME):
+            info = client.get_collection(COLLECTION_NAME)
+            configured_dims = _extract_vector_dimensions(info)
+            current_dim = configured_dims.get("embedding") or configured_dims.get("default")
+
+            if current_dim == EMBEDDING_DIM:
+                print(f"✓ Collection '{COLLECTION_NAME}' già esistente con {EMBEDDING_DIM} dimensioni")
+            else:
+                print(
+                    f"⚠ Collection '{COLLECTION_NAME}' trovata con {current_dim} dimensioni: ricreo con {EMBEDDING_DIM}"
+                )
+                vectorstore.delete_collection(COLLECTION_NAME)
+                vectorstore.create_collection(
+                    COLLECTION_NAME,
+                    vector_config=[VectorConfig(name="embedding", dimensions=EMBEDDING_DIM)]
+                )
+                print(f"✓ Collection '{COLLECTION_NAME}' ricreata con successo ({EMBEDDING_DIM} dimensioni)")
+        else:
+            vectorstore.create_collection(
+                COLLECTION_NAME,
+                vector_config=[VectorConfig(name="embedding", dimensions=EMBEDDING_DIM)]
+            )
+            print(f"✓ Collection '{COLLECTION_NAME}' creata con successo ({EMBEDDING_DIM} dimensioni)")
     except Exception as e:
-        print(f"⚠ Collection già esistente o errore: {e}")
+        print(f"✗ Errore nella configurazione della collection: {e}")
+        raise
     
     return vectorstore
 
 def create_ingestion_pipeline(vectorstore):
-    """Crea la pipeline di ingestion."""
+    """Crea la pipeline di ingestion con Google Embedder."""
     
-    # Inizializza l'embedder
-    embedder_client = OpenAIEmbedder(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        model_name="text-embedding-3-small",
+    # Inizializza il Google Embedder
+    embedder_client = GoogleEmbedder(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        model_name="text-embedding-004",
     )
     
     # Crea la pipeline
@@ -52,7 +99,7 @@ def create_ingestion_pipeline(vectorstore):
             ChunkEmbedder(client=embedder_client),  # Genera embeddings
         ],
         vector_store=vectorstore,
-        collection_name="datapizza_faq"
+        collection_name=COLLECTION_NAME
     )
     
     return ingestion_pipeline
@@ -90,11 +137,12 @@ def main():
     """Funzione principale per l'ingestion."""
     print("=" * 60)
     print("🚀 Inizio ingestion delle FAQ Datapizza-AI")
+    print("   (Google Embedder - text-embedding-004)")
     print("=" * 60)
     
     # Verifica API key
-    if not os.getenv("OPENAI_API_KEY"):
-        print("✗ ERRORE: OPENAI_API_KEY non trovata nel file .env")
+    if not os.getenv("GOOGLE_API_KEY"):
+        print("✗ ERRORE: GOOGLE_API_KEY non trovata nel file .env")
         return
     
     # Setup vector store
@@ -121,4 +169,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

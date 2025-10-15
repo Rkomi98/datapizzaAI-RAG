@@ -1,49 +1,67 @@
 """
 Chatbot RAG per rispondere alle domande sulle FAQ di Datapizza-AI.
 Utilizza DagPipeline per retrieval e generazione risposte.
+Integra Google Client (Gemini 2.5 Flash) con Memory per conversazioni contestuali.
 """
 
 import os
+
 from dotenv import load_dotenv
-from datapizza.clients.openai import OpenAIClient
-from datapizza.embedders.openai import OpenAIEmbedder
+
+from datapizza.clients.google import GoogleClient
+from datapizza.embedders.google import GoogleEmbedder
 from datapizza.modules.prompt import ChatPromptTemplate
 from datapizza.modules.rewriters import ToolRewriter
 from datapizza.pipeline import DagPipeline
-from datapizza.vectorstores.qdrant import QdrantVectorstore
-from datapizza.core.vectorstore import VectorConfig
+from datapizza.memory import Memory
+from datapizza.type import ROLE, TextBlock
+
+from qdrant_config import (
+    COLLECTION_NAME,
+    build_qdrant_vectorstore,
+    describe_qdrant_target,
+)
 
 # Carica variabili d'ambiente
 load_dotenv()
 
 class FAQChatbot:
-    """Chatbot RAG per le FAQ di Datapizza-AI."""
+    """Chatbot RAG per le FAQ di Datapizza-AI con Google Gemini e Memory."""
     
-    def __init__(self):
-        """Inizializza il chatbot con tutti i componenti necessari."""
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+    def __init__(self, memory: Memory = None):
+        """Inizializza il chatbot con tutti i componenti necessari.
         
-        if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY non trovata nel file .env")
+        Args:
+            memory: Istanza di Memory per gestire la cronologia della conversazione
+        """
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        
+        if not self.google_api_key:
+            raise ValueError("GOOGLE_API_KEY non trovata nel file .env")
+        
+        # Inizializza o usa la memory fornita
+        self.memory = memory if memory is not None else Memory()
         
         # Inizializza componenti
         self._setup_clients()
         self._setup_pipeline()
     
     def _setup_clients(self):
-        """Configura i client OpenAI."""
-        self.openai_client = OpenAIClient(
-            model="gpt-4o-mini",
-            api_key=self.openai_api_key
+        """Configura i client Google (Gemini 2.5 Flash)."""
+        self.google_client = GoogleClient(
+            model="gemini-2.5-flash",  # Gemini 2.5 Flash
+            api_key=self.google_api_key,
+            system_prompt="Sei un assistente esperto che risponde alle domande sulle FAQ di Datapizza-AI.",
+            temperature=0.7
         )
         
-        self.embedder = OpenAIEmbedder(
-            api_key=self.openai_api_key,
-            model_name="text-embedding-3-small"
+        self.embedder = GoogleEmbedder(
+            api_key=self.google_api_key,
+            model_name="text-embedding-004"
         )
         
         self.query_rewriter = ToolRewriter(
-            client=self.openai_client,
+            client=self.google_client,
             system_prompt="""Riscrivi la domanda dell'utente per migliorare il retrieval.
             Espandi abbreviazioni, aggiungi contesto e mantieni i termini tecnici importanti.
             Restituisci solo la query riscritta, senza spiegazioni aggiuntive."""
@@ -51,11 +69,21 @@ class FAQChatbot:
     
     def _setup_vectorstore(self):
         """Configura il vector store Qdrant."""
-        retriever = QdrantVectorstore(
-            host="localhost",
-            port=6333
-        )
-        return retriever
+        vectorstore = build_qdrant_vectorstore()
+
+        try:
+            client = vectorstore.get_client()
+            if not client.collection_exists(COLLECTION_NAME):
+                raise RuntimeError(
+                    f"La collection '{COLLECTION_NAME}' non esiste su {describe_qdrant_target()}. "
+                    "Esegui prima lo script di ingestion o verifica la configurazione Qdrant."
+                )
+        except Exception as exc:
+            raise RuntimeError(
+                f"Impossibile connettersi a Qdrant ({describe_qdrant_target()}): {exc}"
+            ) from exc
+
+        return vectorstore
     
     def _setup_pipeline(self):
         """Configura la DagPipeline per il retrieval e la generazione."""
@@ -95,7 +123,7 @@ Informazioni dalle FAQ:
         self.dag_pipeline.add_module("embedder", self.embedder)
         self.dag_pipeline.add_module("retriever", self.retriever)
         self.dag_pipeline.add_module("prompt", self.prompt_template)
-        self.dag_pipeline.add_module("generator", self.openai_client)
+        self.dag_pipeline.add_module("generator", self.google_client)
         
         # Connetti i moduli
         self.dag_pipeline.connect("rewriter", "embedder", target_key="text")
@@ -106,6 +134,7 @@ Informazioni dalle FAQ:
     def ask(self, question: str, k: int = 5, score_threshold: float = 0.5) -> str:
         """
         Invia una domanda al chatbot e ottiene una risposta.
+        La conversazione viene salvata nella Memory per mantenere il contesto.
         
         Args:
             question: La domanda dell'utente
@@ -116,17 +145,18 @@ Informazioni dalle FAQ:
             La risposta del chatbot
         """
         try:
-            # Esegui la pipeline
+            # Esegui la pipeline con memory
             result = self.dag_pipeline.run({
                 "rewriter": {"user_prompt": question},
                 "prompt": {"user_prompt": question},
                 "retriever": {
-                    "collection_name": "datapizza_faq",
+                    "collection_name": COLLECTION_NAME,
                     "k": k
                 },
                 "generator": {
                     "input": question,
-                    "system_prompt": self.system_prompt
+                    "system_prompt": self.system_prompt,
+                    "memory": self.memory  # Passa la memory al generator
                 }
             })
             
@@ -135,9 +165,13 @@ Informazioni dalle FAQ:
             
             # Il generator restituisce un ClientResponse object che contiene blocks
             response_text = ""
+            response_content = None
+            
             if hasattr(generator_result, 'content'):
                 # ClientResponse ha un attributo content che è una lista di blocks
                 content = generator_result.content
+                response_content = content
+                
                 if isinstance(content, list):
                     # Estrai il testo da ogni TextBlock
                     for block in content:
@@ -149,13 +183,28 @@ Informazioni dalle FAQ:
                     response_text = str(content)
             elif isinstance(generator_result, str):
                 response_text = generator_result
+                response_content = [TextBlock(content=generator_result)]
             else:
                 response_text = str(generator_result)
+                response_content = [TextBlock(content=response_text)]
+            
+            # Salva il turno di conversazione nella memory
+            self.memory.add_turn(TextBlock(content=question), role=ROLE.USER)
+            if response_content:
+                if isinstance(response_content, list):
+                    for block in response_content:
+                        self.memory.add_turn(block, role=ROLE.ASSISTANT)
+                else:
+                    self.memory.add_turn(response_content, role=ROLE.ASSISTANT)
+            else:
+                self.memory.add_turn(TextBlock(content=response_text), role=ROLE.ASSISTANT)
             
             return response_text.strip()
             
         except Exception as e:
             print(f"⚠ Errore durante l'elaborazione: {e}")
+            import traceback
+            traceback.print_exc()
             return "Si è verificato un errore nell'elaborazione della domanda."
     
     def interactive_mode(self):
@@ -201,9 +250,8 @@ def main():
         print(f"✗ Errore nell'inizializzazione del chatbot: {e}")
         print("\nAssicurati di:")
         print("1. Aver eseguito l'ingestion (python ingest_faq.py)")
-        print("2. Aver configurato il file .env con OPENAI_API_KEY")
+        print("2. Aver configurato il file .env con GOOGLE_API_KEY")
         print("3. Aver avviato Qdrant (docker run -p 6333:6333 qdrant/qdrant)")
 
 if __name__ == "__main__":
     main()
-

@@ -5,6 +5,7 @@ Interfaccia chat semplice e moderna con Streamlit.
 
 import streamlit as st
 from chatbot_faq import FAQChatbot
+from datapizza.memory import Memory
 import time
 
 # Configurazione della pagina
@@ -147,10 +148,15 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Inizializza la Memory per mantenere il contesto della conversazione
+if "memory" not in st.session_state:
+    st.session_state.memory = Memory()
+
 if "chatbot" not in st.session_state:
-    with st.spinner("🔧 Inizializzazione chatbot..."):
+    with st.spinner("🔧 Inizializzazione chatbot con Google Gemini 2.5 Flash..."):
         try:
-            st.session_state.chatbot = FAQChatbot()
+            # Passa la memory condivisa al chatbot
+            st.session_state.chatbot = FAQChatbot(memory=st.session_state.memory)
             st.session_state.chatbot_ready = True
         except Exception as e:
             st.session_state.chatbot_ready = False
@@ -169,13 +175,16 @@ if not st.session_state.chatbot_ready:
     
     **Assicurati di:**
     1. Aver eseguito l'ingestion: `python ingest_faq.py`
-    2. Aver configurato il file `.env` con OPENAI_API_KEY
-    3. Aver avviato Qdrant: `docker run -p 6333:6333 qdrant/qdrant`
+    2. Aver configurato il file `.env` con GOOGLE_API_KEY
+    3. Aver configurato Qdrant (host remoto o embedded) tramite le variabili `QDRANT_*`
     """)
     st.stop()
 
 # Sidebar con informazioni e suggerimenti
 with st.sidebar:
+    st.markdown("### 🧠 Modello AI")
+    st.info("**Google Gemini 2.5 Flash** con Memory attiva")
+    
     st.markdown("### 💡 Suggerimenti")
     st.markdown("""
     Prova a chiedere:
@@ -184,6 +193,8 @@ with st.sidebar:
     - Come funziona la memory?
     - Quali sono i casi d'uso concreti?
     - Posso usare documenti aziendali in locale?
+    
+    **Novità**: Il chatbot ora ricorda la conversazione! 🧠
     """)
     
     st.markdown("---")
@@ -207,6 +218,9 @@ with st.sidebar:
     # Pulsante per pulire la chat
     if st.button("🗑️ Pulisci chat", use_container_width=True):
         st.session_state.messages = []
+        # Resetta anche la memory per cancellare il contesto
+        st.session_state.memory = Memory()
+        st.session_state.chatbot.memory = st.session_state.memory
         st.rerun()
     
     st.markdown("---")
@@ -294,4 +308,3 @@ if len(st.session_state.messages) == 0:
         <p><strong>Inizia facendo una domanda qui sotto! ⬇️</strong></p>
     </div>
     """, unsafe_allow_html=True)
-

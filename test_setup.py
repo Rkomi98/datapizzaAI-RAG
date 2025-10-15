@@ -60,14 +60,15 @@ def check_env_file():
     from dotenv import load_dotenv
     load_dotenv()
     
-    api_key = os.getenv('OPENAI_API_KEY', '')
+    api_key = os.getenv('GOOGLE_API_KEY', '')
     
-    if not api_key or api_key == 'your_openai_api_key_here':
-        print("❌ OPENAI_API_KEY non configurata")
-        print("   Modifica il file .env e inserisci la tua API key")
+    if not api_key or api_key == 'your_google_api_key_here':
+        print("❌ GOOGLE_API_KEY non configurata")
+        print("   Modifica il file .env e inserisci la tua API key Google")
+        print("   Ottieni una chiave da: https://ai.google.dev/")
         return False
     
-    print("✅ OPENAI_API_KEY configurata")
+    print("✅ GOOGLE_API_KEY configurata")
     return True
 
 def check_qdrant():

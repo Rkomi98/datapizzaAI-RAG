@@ -12,11 +12,12 @@ Questo progetto implementa un sistema RAG (Retrieval-Augmented Generation) compl
 ## ✨ Caratteristiche
 
 - 🌐 **Interfaccia web moderna** con Streamlit - UI pulita e intuitiva
-- 🔍 **Retrieval semantico** con embeddings OpenAI
+- 🔍 **Retrieval semantico** con embeddings Google (text-embedding-004)
 - 🧠 **Query rewriting** per migliorare il retrieval
 - 💾 **Vector store** Qdrant per memorizzazione efficiente
-- 🤖 **Generazione risposte** con GPT-4o-mini
-- 💬 **Doppia interfaccia** - Web e terminale
+- 🤖 **Generazione risposte** con Google Gemini 2.5 Flash
+- 💬 **Memory attiva** - mantiene il contesto della conversazione
+- 🔄 **Doppia interfaccia** - Web e terminale
 - 📝 **Pipeline modulare** facilmente estensibile
 - 🎨 **Design minimal** e user-friendly
 
@@ -29,7 +30,7 @@ File Markdown → TextParser → NodeSplitter → ChunkEmbedder → Qdrant Vecto
 
 ### Pipeline di Retrieval (DagPipeline)
 ```
-Query Utente → ToolRewriter → Embedder → VectorStore Retrieval → Prompt Template → Generator (GPT-4o-mini)
+Query Utente → ToolRewriter → Embedder → VectorStore Retrieval → Prompt Template → Generator (Gemini 2.5 Flash) + Memory
 ```
 
 ## 🚀 Quick Start
@@ -58,7 +59,7 @@ L'interfaccia web si aprirà automaticamente nel browser! 🎉
 # 1. Attiva l'environment
 source rag/bin/activate
 
-# 2. Configura .env con la tua API key OpenAI
+# 2. Configura .env con la tua API key Google (Gemini)
 
 # 3. Avvia Qdrant (terminale separato)
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
@@ -146,7 +147,7 @@ datapizzaAI-RAG/
 
 - **[Datapizza-AI](https://docs.datapizza.ai/)** - Framework GenAI modulare
 - **[Streamlit](https://streamlit.io/)** - Framework per interfaccia web interattiva
-- **[OpenAI](https://openai.com/)** - Embeddings (text-embedding-3-small) e LLM (gpt-4o-mini)
+- **[Google Gemini](https://ai.google.dev/)** - Embeddings (text-embedding-004) e LLM (Gemini 2.5 Flash)
 - **[Qdrant](https://qdrant.tech/)** - Vector database per similarity search
 - **Python 3.13+** - Linguaggio di programmazione
 
@@ -156,7 +157,7 @@ datapizzaAI-RAG/
 Script che implementa la **IngestionPipeline** per:
 - Leggere i file markdown delle FAQ
 - Dividere il testo in chunks semantici
-- Generare embeddings con OpenAI
+- Generare embeddings con Google (text-embedding-004, 768 dimensioni)
 - Salvare nel vector store Qdrant
 
 ### chatbot_faq.py
@@ -164,7 +165,8 @@ Implementa il chatbot usando **DagPipeline** con:
 - Query rewriting per migliorare il retrieval
 - Embedding della query
 - Retrieval semantico dei chunks rilevanti
-- Generazione risposta contestualizzata
+- Generazione risposta contestualizzata con Gemini 2.5 Flash
+- Memory per mantenere il contesto della conversazione
 - Fallback message quando non trova informazioni
 
 ## 🔧 Configurazione Avanzata
@@ -186,41 +188,52 @@ max_char = 1000
 
 ### Modelli Alternativi
 
-Puoi sostituire i modelli OpenAI con alternative:
+Puoi cambiare i modelli Google con altre varianti:
 
 ```python
-# Per embeddings
-embedder = OpenAIEmbedder(
-    model_name="text-embedding-3-large"  # Più accurato
+# Per embeddings - altre opzioni Google
+embedder = GoogleEmbedder(
+    model_name="text-embedding-004"  # Attualmente in uso
 )
 
-# Per generazione
-client = OpenAIClient(
-    model="gpt-4o"  # Più potente
+# Per generazione - altri modelli Gemini
+client = GoogleClient(
+    model="gemini-2.5-flash"  # Gemini 2.5 Flash (attuale)
 )
+
+# Oppure altri provider (OpenAI, Anthropic, Mistral, etc.)
+from datapizza.clients.openai import OpenAIClient
+client = OpenAIClient(model="gpt-4o")
 ```
 
 ## 🐛 Troubleshooting
 
-### "OPENAI_API_KEY non trovata"
-→ Crea il file `.env` e inserisci la tua API key
+### "GOOGLE_API_KEY non trovata"
+→ Crea il file `.env` e inserisci la tua API key Google:
+```bash
+GOOGLE_API_KEY=your-google-api-key-here
+```
+→ Ottieni una chiave API da: https://ai.google.dev/
 
 ### "Connection refused" (Qdrant)
 → Verifica che Qdrant sia in esecuzione: `docker ps | grep qdrant`
 
 ### "Collection not found"
 → Esegui prima l'ingestion: `python ingest_faq.py`
+→ NOTA: Se hai già una collection con dimensioni 1536 (OpenAI), devi ricrearla!
 
 ### Risposte sempre "Non sono ancora state fatte domande..."
 → Verifica che l'ingestion sia andata a buon fine
 → Prova ad abbassare la `score_threshold`
+→ Verifica che gli embeddings siano stati creati correttamente
 
 ## 📚 Risorse
 
 - [Documentazione Datapizza-AI](https://docs.datapizza.ai/)
 - [Guida RAG](https://docs.datapizza.ai/0.0.2/Guides/RAG/rag/)
+- [Google AI Studio](https://ai.google.dev/)
 - [Qdrant Documentation](https://qdrant.tech/documentation/)
-- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [Gemini API Documentation](https://ai.google.dev/docs)
 
 ## 🤝 Contribuire
 
