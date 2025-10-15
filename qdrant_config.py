@@ -30,7 +30,7 @@ def describe_qdrant_target() -> str:
     if location:
         return f"embedded Qdrant at '{location}'"
 
-    url = os.getenv("QDRANT_URL")
+    url = os.getenv("QDRANT_URL") or os.getenv("QDRANT_API_URL")
     if url:
         parsed = urlparse(url)
         host = parsed.hostname or "unknown-host"
@@ -45,9 +45,9 @@ def describe_qdrant_target() -> str:
 
 def build_qdrant_vectorstore() -> QdrantVectorstore:
     """Instantiate a QdrantVectorstore based on environment configuration."""
-    api_key = os.getenv("QDRANT_API_KEY")
+    api_key = os.getenv("QDRANT_API_KEY") or os.getenv("QDRANT_TOKEN")
     location = os.getenv("QDRANT_LOCATION")
-    url = os.getenv("QDRANT_URL")
+    url = os.getenv("QDRANT_URL") or os.getenv("QDRANT_API_URL")
     host = os.getenv("QDRANT_HOST")
     port = os.getenv("QDRANT_PORT")
     https_flag = _bool_from_env(os.getenv("QDRANT_HTTPS"))
