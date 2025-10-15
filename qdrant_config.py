@@ -14,8 +14,7 @@ from urllib.parse import urlparse
 
 from datapizza.vectorstores.qdrant import QdrantVectorstore
 
-COLLECTION_NAME = os.getenv("FAQ_COLLECTION_NAME", "datapizza_faq")
-EMBEDDING_DIM = int(os.getenv("FAQ_EMBEDDING_DIM", "768"))
+COLLECTION_NAME = os.getenv("FAQ_COLLECTION_NAME", "datapizzai_faq")
 
 
 def _bool_from_env(value: str | None) -> bool | None:

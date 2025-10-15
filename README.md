@@ -12,7 +12,7 @@ Questo progetto implementa un sistema RAG (Retrieval-Augmented Generation) compl
 ## ✨ Caratteristiche
 
 - 🌐 **Interfaccia web moderna** con Streamlit - UI pulita e intuitiva
-- 🔍 **Retrieval semantico** con embeddings Google (text-embedding-004)
+- 🔍 **Retrieval semantico** con embeddings Google (default: gemini-embedding-001)
 - 🧠 **Query rewriting** per migliorare il retrieval
 - 💾 **Vector store** Qdrant per memorizzazione efficiente
 - 🤖 **Generazione risposte** con Google Gemini 2.5 Flash
@@ -147,7 +147,7 @@ datapizzaAI-RAG/
 
 - **[Datapizza-AI](https://docs.datapizza.ai/)** - Framework GenAI modulare
 - **[Streamlit](https://streamlit.io/)** - Framework per interfaccia web interattiva
-- **[Google Gemini](https://ai.google.dev/)** - Embeddings (text-embedding-004) e LLM (Gemini 2.5 Flash)
+- **[Google Gemini](https://ai.google.dev/)** - Embeddings (gemini-embedding-001 di default) e LLM (Gemini 2.5 Flash)
 - **[Qdrant](https://qdrant.tech/)** - Vector database per similarity search
 - **Python 3.13+** - Linguaggio di programmazione
 
@@ -157,7 +157,7 @@ datapizzaAI-RAG/
 Script che implementa la **IngestionPipeline** per:
 - Leggere i file markdown delle FAQ
 - Dividere il testo in chunks semantici
-- Generare embeddings con Google (text-embedding-004, 768 dimensioni)
+- Generare embeddings con Google (gemini-embedding-001, 3072 dimensioni di default – personalizzabili impostando `FAQ_EMBEDDING_MODEL` o `FAQ_EMBEDDING_DIM`)
 - Salvare nel vector store Qdrant
 
 ### chatbot_faq.py
@@ -177,13 +177,13 @@ Nel file `chatbot_faq.py` puoi modificare:
 
 ```python
 # Numero di chunks da recuperare
-k = 5
+k = 10
 
 # Soglia minima di similarity score
 score_threshold = 0.5
 
 # Dimensione massima dei chunks
-max_char = 1000
+max_char = 2000
 ```
 
 ### Modelli Alternativi
@@ -193,7 +193,7 @@ Puoi cambiare i modelli Google con altre varianti:
 ```python
 # Per embeddings - altre opzioni Google
 embedder = GoogleEmbedder(
-    model_name="text-embedding-004"  # Attualmente in uso
+    model_name="gemini-embedding-001"  # Default attuale (imposta FAQ_EMBEDDING_MODEL per cambiarlo)
 )
 
 # Per generazione - altri modelli Gemini

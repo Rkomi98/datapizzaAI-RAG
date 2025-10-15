@@ -104,12 +104,13 @@ language: it
 related: []
 ---
 
-### Q: Domanda ma se la volessi integrare in un mio progetto? Per cosa è “più portata” diciamo? Mi interessa molto come progetto.
+### Q: Domanda ma se la volessi integrare in un mio progetto? Per cosa è “più portata” diciamo? Insomma a cosa serve? Devo pagare una fee?
 
 **A:**  
 Diciamo che questo framework serve ad aiutare gli sviluppatori nei loro progetti di Generative AI.  
 Questi possono essere o semplici chatbot, o magari sistemi agentici. Per esempio hai un agente che riesce a riconoscere la richiesta dell'utente e in base alla sua richiesta chiama una serie di tool con un ordine specifico in base alla necessità.  
 Grazie al framework risulta facile costruire un proprio sistema RAG o pipeline.
+Infine, essendo opensource, il framework è free e sei libero di usarlo come vuoi :)!
 
 
 ---

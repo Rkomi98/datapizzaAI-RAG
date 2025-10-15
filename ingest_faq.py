@@ -16,16 +16,29 @@ from datapizza.modules.parsers import TextParser
 from datapizza.modules.splitters import NodeSplitter
 from datapizza.pipeline import IngestionPipeline
 
-from qdrant_config import (
-    COLLECTION_NAME,
-    EMBEDDING_DIM,
-    build_qdrant_vectorstore,
-    describe_qdrant_target,
-)
+from qdrant_config import COLLECTION_NAME, build_qdrant_vectorstore, describe_qdrant_target
 
 # Carica variabili d'ambiente
 load_dotenv()
 
+EMBEDDING_MODEL = os.getenv("FAQ_EMBEDDING_MODEL", "gemini-embedding-001")
+EMBEDDING_DIM_OVERRIDE = os.getenv("FAQ_EMBEDDING_DIM")
+
+
+def _detect_embedding_dimension(embedder_client: GoogleEmbedder) -> int:
+    """Calcola dinamicamente la dimensione degli embedding generati dal client Google."""
+    probe_text = "Datapizza-AI FAQ dimension probe."
+    vector = embedder_client.embed(probe_text)
+
+    if isinstance(vector, list) and vector:
+        if isinstance(vector[0], float):
+            return len(vector)
+        if isinstance(vector[0], list) and vector[0]:
+            return len(vector[0])
+
+    raise ValueError(
+        "Impossibile determinare la dimensione degli embedding restituiti da Google Embedder."
+    )
 
 def _extract_vector_dimensions(collection_info: qdrant_models.CollectionInfo) -> dict[str, int]:
     """Return the dense vector dimensions configured on the collection."""
@@ -41,11 +54,8 @@ def _extract_vector_dimensions(collection_info: qdrant_models.CollectionInfo) ->
     return dims
 
 
-def setup_vectorstore():
-    """Configura e crea la collection nel vector store.
-    
-    Nota: Google text-embedding-004 usa 768 dimensioni.
-    """
+def setup_vectorstore(embedding_dim: int):
+    """Configura e crea la collection nel vector store con la dimensione richiesta dagli embedding."""
     vectorstore = build_qdrant_vectorstore()
 
     client = vectorstore.get_client()
@@ -58,44 +68,38 @@ def setup_vectorstore():
             configured_dims = _extract_vector_dimensions(info)
             current_dim = configured_dims.get("embedding") or configured_dims.get("default")
 
-            if current_dim == EMBEDDING_DIM:
-                print(f"✓ Collection '{COLLECTION_NAME}' già esistente con {EMBEDDING_DIM} dimensioni")
+            if current_dim == embedding_dim:
+                print(f"✓ Collection '{COLLECTION_NAME}' già esistente con {embedding_dim} dimensioni")
             else:
                 print(
-                    f"⚠ Collection '{COLLECTION_NAME}' trovata con {current_dim} dimensioni: ricreo con {EMBEDDING_DIM}"
+                    f"⚠ Collection '{COLLECTION_NAME}' trovata con {current_dim} dimensioni: ricreo con {embedding_dim}"
                 )
                 vectorstore.delete_collection(COLLECTION_NAME)
                 vectorstore.create_collection(
                     COLLECTION_NAME,
-                    vector_config=[VectorConfig(name="embedding", dimensions=EMBEDDING_DIM)]
+                    vector_config=[VectorConfig(name="embedding", dimensions=embedding_dim)]
                 )
-                print(f"✓ Collection '{COLLECTION_NAME}' ricreata con successo ({EMBEDDING_DIM} dimensioni)")
+                print(f"✓ Collection '{COLLECTION_NAME}' ricreata con successo ({embedding_dim} dimensioni)")
         else:
             vectorstore.create_collection(
                 COLLECTION_NAME,
-                vector_config=[VectorConfig(name="embedding", dimensions=EMBEDDING_DIM)]
+                vector_config=[VectorConfig(name="embedding", dimensions=embedding_dim)]
             )
-            print(f"✓ Collection '{COLLECTION_NAME}' creata con successo ({EMBEDDING_DIM} dimensioni)")
+            print(f"✓ Collection '{COLLECTION_NAME}' creata con successo ({embedding_dim} dimensioni)")
     except Exception as e:
         print(f"✗ Errore nella configurazione della collection: {e}")
         raise
     
     return vectorstore
 
-def create_ingestion_pipeline(vectorstore):
+def create_ingestion_pipeline(vectorstore, embedder_client: GoogleEmbedder):
     """Crea la pipeline di ingestion con Google Embedder."""
-    
-    # Inizializza il Google Embedder
-    embedder_client = GoogleEmbedder(
-        api_key=os.getenv("GOOGLE_API_KEY"),
-        model_name="text-embedding-004",
-    )
     
     # Crea la pipeline
     ingestion_pipeline = IngestionPipeline(
         modules=[
             TextParser(),  # Parser per file markdown
-            NodeSplitter(max_char=1000),  # Split in chunks di max 1000 caratteri
+            NodeSplitter(max_char=2000),  # Split in chunks più grandi per non spezzare Q&A
             ChunkEmbedder(client=embedder_client),  # Genera embeddings
         ],
         vector_store=vectorstore,
@@ -137,21 +141,39 @@ def main():
     """Funzione principale per l'ingestion."""
     print("=" * 60)
     print("🚀 Inizio ingestion delle FAQ Datapizza-AI")
-    print("   (Google Embedder - text-embedding-004)")
+    print(f"   (Google Embedder - {EMBEDDING_MODEL})")
     print("=" * 60)
     
     # Verifica API key
     if not os.getenv("GOOGLE_API_KEY"):
         print("✗ ERRORE: GOOGLE_API_KEY non trovata nel file .env")
         return
+
+    # Inizializza il Google Embedder
+    embedder_client = GoogleEmbedder(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        model_name=EMBEDDING_MODEL,
+    )
+
+    # Determina la dimensione degli embedding
+    if EMBEDDING_DIM_OVERRIDE:
+        embedding_dim = int(EMBEDDING_DIM_OVERRIDE)
+        print(f"📏 Dimensione embedding forzata da variabile d'ambiente: {embedding_dim}")
+    else:
+        try:
+            embedding_dim = _detect_embedding_dimension(embedder_client)
+            print(f"📏 Dimensione embedding rilevata: {embedding_dim}")
+        except Exception as e:
+            print(f"✗ Impossibile determinare la dimensione degli embedding: {e}")
+            return
     
     # Setup vector store
     print("\n📦 Setup vector store...")
-    vectorstore = setup_vectorstore()
+    vectorstore = setup_vectorstore(embedding_dim)
     
     # Crea pipeline
     print("\n🔧 Creazione pipeline di ingestion...")
-    pipeline = create_ingestion_pipeline(vectorstore)
+    pipeline = create_ingestion_pipeline(vectorstore, embedder_client)
     
     # File FAQ da processare
     faq_files = [

@@ -25,6 +25,8 @@ from qdrant_config import (
 # Carica variabili d'ambiente
 load_dotenv()
 
+EMBEDDING_MODEL = os.getenv("FAQ_EMBEDDING_MODEL", "gemini-embedding-001")
+
 class FAQChatbot:
     """Chatbot RAG per le FAQ di Datapizza-AI con Google Gemini e Memory."""
     
@@ -57,14 +59,16 @@ class FAQChatbot:
         
         self.embedder = GoogleEmbedder(
             api_key=self.google_api_key,
-            model_name="text-embedding-004"
+            model_name=EMBEDDING_MODEL
         )
         
         self.query_rewriter = ToolRewriter(
             client=self.google_client,
-            system_prompt="""Riscrivi la domanda dell'utente per migliorare il retrieval.
-            Espandi abbreviazioni, aggiungi contesto e mantieni i termini tecnici importanti.
-            Restituisci solo la query riscritta, senza spiegazioni aggiuntive."""
+            system_prompt="""Riscrivi la domanda dell'utente per migliorare il retrieval dalle FAQ di Datapizza-AI.
+            - Mantieni il contesto specifico: "questo framework" si riferisce a "Datapizza-AI"
+            - Espandi abbreviazioni ma resta specifico
+            - Aggiungi termini chiave rilevanti per Datapizza-AI
+            - Restituisci solo la query riscritta, senza spiegazioni aggiuntive."""
         )
     
     def _setup_vectorstore(self):
@@ -92,13 +96,13 @@ class FAQChatbot:
         # System prompt da aggiungere alla configurazione del client
         self.system_prompt = """Sei un assistente esperto di Datapizza-AI, un framework Python per applicazioni GenAI.
 
-Il tuo compito è rispondere alle domande degli utenti basandoti ESCLUSIVAMENTE sulle FAQ fornite.
+Il tuo compito è rispondere alle domande degli utenti basandoti sulle FAQ fornite.
 
 REGOLE IMPORTANTI:
-1. Se trovi informazioni rilevanti nelle FAQ, rispondi in modo chiaro e completo
-2. Se NON trovi informazioni rilevanti, rispondi ESATTAMENTE: "Non sono ancora state fatte domande a riguardo."
+1. Se trovi anche solo parzialmente informazioni rilevanti nelle FAQ, usale per rispondere
+2. SOLO se le FAQ non contengono NESSUNA informazione utile, rispondi: "Non sono ancora state fatte domande a riguardo."
 3. Non inventare informazioni che non sono nelle FAQ
-4. Puoi citare le FAQ specifiche se utile
+4. Sintetizza e organizza le informazioni delle FAQ in modo chiaro
 5. Mantieni un tono professionale e amichevole
 6. Rispondi in italiano"""
         
@@ -118,20 +122,20 @@ Informazioni dalle FAQ:
         # Crea la DagPipeline
         self.dag_pipeline = DagPipeline()
         
-        # Aggiungi moduli
+        # Aggiungi moduli (con query rewriter riattivato)
         self.dag_pipeline.add_module("rewriter", self.query_rewriter)
         self.dag_pipeline.add_module("embedder", self.embedder)
         self.dag_pipeline.add_module("retriever", self.retriever)
         self.dag_pipeline.add_module("prompt", self.prompt_template)
         self.dag_pipeline.add_module("generator", self.google_client)
         
-        # Connetti i moduli
+        # Connetti i moduli (con rewriter)
         self.dag_pipeline.connect("rewriter", "embedder", target_key="text")
         self.dag_pipeline.connect("embedder", "retriever", target_key="query_vector")
         self.dag_pipeline.connect("retriever", "prompt", target_key="chunks")
         self.dag_pipeline.connect("prompt", "generator", target_key="memory")
     
-    def ask(self, question: str, k: int = 5, score_threshold: float = 0.5) -> str:
+    def ask(self, question: str, k: int = 10, score_threshold: float = 0.5) -> str:
         """
         Invia una domanda al chatbot e ottiene una risposta.
         La conversazione viene salvata nella Memory per mantenere il contesto.
@@ -145,9 +149,9 @@ Informazioni dalle FAQ:
             La risposta del chatbot
         """
         try:
-            # Esegui la pipeline con memory
+            # Esegui la pipeline con memory e query rewriter
             result = self.dag_pipeline.run({
-                "rewriter": {"user_prompt": question},
+                "rewriter": {"user_prompt": question},  # Ri-scrivi la query
                 "prompt": {"user_prompt": question},
                 "retriever": {
                     "collection_name": COLLECTION_NAME,

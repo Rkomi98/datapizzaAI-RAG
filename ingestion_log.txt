@@ -1,0 +1,25 @@
+============================================================
+🚀 Inizio ingestion delle FAQ Datapizza-AI
+   (Google Embedder - text-embedding-004)
+============================================================
+
+📦 Setup vector store...
+🔗 Target Qdrant: https://6dfcd840-09f1-4e28-8caa-4f2e09b145b8.eu-central-1-0.aws.cloud.qdrant.io:6333
+✓ Collection 'datapizza_faq' già esistente con 768 dimensioni
+
+🔧 Creazione pipeline di ingestion...
+
+📚 Ingestion documenti...
+📄 Processando datapizza_faq.md...
+[32mINFO    [0m [2025-10-15 20:47:35 - datapizza.pipeline.pipeline:22] Running component TextParser
+[32mINFO    [0m [2025-10-15 20:47:35 - datapizza.pipeline.pipeline:22] Running component NodeSplitter
+[32mINFO    [0m [2025-10-15 20:47:35 - datapizza.pipeline.pipeline:22] Running component ChunkEmbedder
+✓ datapizza_faq.md processato con successo
+📄 Processando FAQ_Video.md...
+[32mINFO    [0m [2025-10-15 20:47:37 - datapizza.pipeline.pipeline:22] Running component TextParser
+[32mINFO    [0m [2025-10-15 20:47:37 - datapizza.pipeline.pipeline:22] Running component NodeSplitter
+[32mINFO    [0m [2025-10-15 20:47:37 - datapizza.pipeline.pipeline:22] Running component ChunkEmbedder
+✓ FAQ_Video.md processato con successo
+
+✅ Ingestion completata!
+============================================================

@@ -202,7 +202,7 @@ with st.sidebar:
     st.markdown("### ⚙️ Impostazioni")
     
     # Numero di chunks da recuperare
-    k = st.slider("Chunks da recuperare", min_value=1, max_value=10, value=5, 
+    k = st.slider("Chunks da recuperare", min_value=1, max_value=20, value=10, 
                   help="Numero di chunks rilevanti da recuperare dal vector store")
     
     # Score threshold
