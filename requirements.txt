@@ -1,9 +1,9 @@
 # Datapizza AI Framework
 datapizza-ai>=0.0.2
 datapizza-ai-clients-openai>=0.0.3
-datapizza-ai-clients-google>=0.0.3
+datapizza-ai-clients-google>=0.0.2
 datapizza-ai-embedders-openai>=0.0.3
-datapizza-ai-embedders-google>=0.0.3
+datapizza-ai-embedders-google>=0.0.2
 datapizza-ai-vectorstores-qdrant>=0.0.2
 datapizza-ai-core>=0.0.2
 
