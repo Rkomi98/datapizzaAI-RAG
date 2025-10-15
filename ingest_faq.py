@@ -150,6 +150,12 @@ def ingest_documents(pipeline, faq_files):
 
             language = _detect_language_from_path(faq_file)
             category = "scripts" if language == "en" else "faq"
+            subtopic = None
+
+            if category == "scripts":
+                # Deriva un topic leggibile dal nome file
+                filename = os.path.splitext(os.path.basename(faq_file))[0]
+                subtopic = filename.replace("_", " ").replace("-", " ").strip()
             
             # Il TextParser si aspetta una stringa, non un filepath
             pipeline.run(
@@ -157,7 +163,8 @@ def ingest_documents(pipeline, faq_files):
                 metadata={
                     "source": faq_file,
                     "type": category,
-                    "language": language
+                    "language": language,
+                    **({"topic": subtopic} if subtopic else {}),
                 }
             )
             print(f"✓ {faq_file} processato con successo ({language.upper()})")

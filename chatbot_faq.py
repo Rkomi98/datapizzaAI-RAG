@@ -185,22 +185,34 @@ Informazioni dalle FAQ:
             rewritten_query = result.get("rewriter")
             retrieved_chunks = result.get("retriever") or []
 
-            chunk_previews = [
-                {
-                    "id": getattr(chunk, "id", None),
-                    "score": getattr(chunk, "score", None),
-                    "metadata": getattr(chunk, "metadata", {}),
-                    "text": chunk.text,
-                }
-                for chunk in retrieved_chunks
-            ]
+            chunk_previews = []
+            language_counts: Dict[str, int] = {}
+
+            for chunk in retrieved_chunks:
+                metadata = getattr(chunk, "metadata", {}) or {}
+                lang = metadata.get("language") or metadata.get("Language") or "unknown"
+                language_counts[lang] = language_counts.get(lang, 0) + 1
+
+                chunk_previews.append(
+                    {
+                        "id": getattr(chunk, "id", None),
+                        "score": getattr(chunk, "score", None),
+                        "metadata": metadata,
+                        "text": chunk.text,
+                    }
+                )
 
             if debug_mode:
                 print("🔍 FAQ_DEBUG attivo")
                 print(f"   • Query originale : {question}")
                 print(f"   • Query riscritta : {rewritten_query}")
                 print(f"   • Chunk recuperati: {len(retrieved_chunks)}")
+                if language_counts:
+                    print("   • Lingue chunk     :", language_counts)
                 for idx, chunk in enumerate(retrieved_chunks[:3], 1):
+                    meta = getattr(chunk, "metadata", {}) or {}
+                    src = meta.get("source")
+                    lang = meta.get("language")
                     preview = chunk.text.replace("\n", " ")[:240]
                     print(f"     #{idx}: {preview}{'…' if len(chunk.text) > 240 else ''}")
 
@@ -232,15 +244,8 @@ Informazioni dalle FAQ:
                 response_text = str(generator_result)
                 response_content = [TextBlock(content=response_text)]
 
-            if response_text.strip() == fallback_message and retrieved_chunks:
+            if response_text.strip() == fallback_message:
                 fallback_triggered = True
-                # Evita falso negativo se ci sono chunk utili
-                combined = "\n\n".join(chunk.text.strip() for chunk in retrieved_chunks[:2])
-                response_text = combined.strip()
-                response_content = [TextBlock(content=response_text)]
-                if debug_mode:
-                    print("⚠️  Fallback evitato: presenti chunk rilevanti, ritorno il testo grezzo.")
-                fallback_overridden = True
             
             final_response = response_text.strip()
 
