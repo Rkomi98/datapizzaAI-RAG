@@ -58,6 +58,61 @@ Per ora è la soluzione che ci ha portato a una maggiore stabilità nei casi d�
 
 
 ---
+id: faq_audio_support
+category: integrazioni
+tags: [audio, google, client, file, inline]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Ciao a tutti, sto iniziando ad usare datapizza-ai ed vorrei sapere se il supporto ai file audio è solo del client Google
+
+**A:**  
+Yess, google è l'unico a supportare file audio inline all'intreno della conversazione, tutti gli altri ti obbligano a caricare un file e poi analizzare quello
+
+---
+id: faq_tool_stampa_pensieri
+category: tools
+tags: [stampa-pensieri, tool, testing, ragionamento, json]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: per evitare che il modello fosse in qualche modo condizionato dall'uso del tool "Stampa pensieri" era necessario eseguirlo a posteriori non mi è chiaro come forzare la chiamata al tool ma dopo che abbia già fatto la chiamata il client.
+
+**A:**  
+Se vuoi usarlo per fare testing, invece di usare un tool è più comodo far rispondere al modello con un json con questa struttura:
+
+{
+    "risposta": # risposta alla domanda utente,
+    "ragionamento": # il ragionamento che ti ha portato alla risposta
+}
+
+Quando fai il rilascio invece lo fai rispondere normalmente
+
+---
+id: faq_integrazione_progetti
+category: use-cases
+tags: [integrazione, progetti, agenti, rag, pipeline, chatbot]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Domanda ma se la volessi integrare in un mio progetto? Per cosa è “più portata” diciamo? Mi interessa molto come progetto.
+
+**A:**  
+Diciamo che questo framework serve ad aiutare gli sviluppatori nei loro progetti di Generative AI.  
+Questi possono essere o semplici chatbot, o magari sistemi agentici. Per esempio hai un agente che riesce a riconoscere la richiesta dell'utente e in base alla sua richiesta chiama una serie di tool con un ordine specifico in base alla necessità.  
+Grazie al framework risulta facile costruire un proprio sistema RAG o pipeline.
+
+
+---
 id: faq_placeholder_example
 category: integrazioni
 tags: [placeholder, draft]
