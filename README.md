@@ -158,6 +158,7 @@ Script che implementa la **IngestionPipeline** per:
 - Leggere i file markdown delle FAQ
 - Dividere il testo in chunks semantici
 - Generare embeddings con Google (gemini-embedding-001, 3072 dimensioni di default – personalizzabili impostando `FAQ_EMBEDDING_MODEL` o `FAQ_EMBEDDING_DIM`)
+- Includere automaticamente i copioni in inglese della cartella `Scripts/`, marcandoli con metadati `language="en"` e `type="scripts"`
 - Salvare nel vector store Qdrant
 
 ### chatbot_faq.py

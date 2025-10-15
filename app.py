@@ -148,6 +148,12 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Stato debug e log
+if "debug" not in st.session_state:
+    st.session_state.debug = False
+if "debug_logs" not in st.session_state:
+    st.session_state.debug_logs = []
+
 # Inizializza la Memory per mantenere il contesto della conversazione
 if "memory" not in st.session_state:
     st.session_state.memory = Memory()
@@ -156,11 +162,17 @@ if "chatbot" not in st.session_state:
     with st.spinner("🔧 Inizializzazione chatbot con Google Gemini 2.5 Flash..."):
         try:
             # Passa la memory condivisa al chatbot
-            st.session_state.chatbot = FAQChatbot(memory=st.session_state.memory)
+            st.session_state.chatbot = FAQChatbot(
+                memory=st.session_state.memory,
+                debug_mode=st.session_state.debug,
+            )
             st.session_state.chatbot_ready = True
         except Exception as e:
             st.session_state.chatbot_ready = False
             st.session_state.error_message = str(e)
+elif st.session_state.get("chatbot_ready", False):
+    # Mantieni sincronizzato il flag di debug
+    st.session_state.chatbot.set_debug_mode(st.session_state.debug)
 
 # Header
 st.markdown('<h1 class="main-header">🍕 Chatbot FAQ Datapizza-AI</h1>', unsafe_allow_html=True)
@@ -198,6 +210,50 @@ with st.sidebar:
     """)
     
     st.markdown("---")
+
+    st.markdown("### 🧪 Debug")
+    debug_toggle = st.checkbox(
+        "Mostra dettagli retrieval",
+        value=st.session_state.debug,
+        help="Abilita il logging della query riscritta, dei chunk trovati e di eventuali fallback.",
+    )
+    if debug_toggle != st.session_state.debug:
+        st.session_state.debug = debug_toggle
+        if st.session_state.get("chatbot_ready", False):
+            st.session_state.chatbot.set_debug_mode(debug_toggle)
+        st.session_state.debug_logs = []
+
+    if st.session_state.debug:
+        if st.session_state.debug_logs:
+            last_debug = st.session_state.debug_logs[-1]
+            st.markdown("**Query riscritta**")
+            st.code(last_debug.get("rewritten_query") or "—", language="text")
+
+            if last_debug.get("fallback_overridden"):
+                st.warning("Il modello aveva restituito il fallback: mostrato il testo più rilevante dalle FAQ.")
+            elif last_debug.get("fallback_triggered"):
+                st.info("Il modello ha restituito il fallback (nessuna informazione rilevante trovata).")
+
+            st.markdown("**Top chunk (max 3)**")
+            for chunk in last_debug.get("chunks", [])[:3]:
+                source = chunk.get("metadata", {}).get("source", "sorgente sconosciuta")
+                score = chunk.get("score")
+                score_label = None
+                if score is not None:
+                    try:
+                        score_label = round(float(score), 3)
+                    except (TypeError, ValueError):
+                        score_label = score
+                preview = chunk.get("text", "").strip().replace("\n", " ")
+                preview = preview[:220] + ("…" if len(preview) > 220 else "")
+                bullet = f"- `{source}`"
+                if score_label is not None:
+                    bullet += f" · score: {score_label}"
+                st.markdown(f"{bullet}\n\n    {preview}")
+        else:
+            st.info("Invia una domanda per visualizzare i dettagli di debug.")
+    
+    st.markdown("---")
     
     st.markdown("### ⚙️ Impostazioni")
     
@@ -221,6 +277,7 @@ with st.sidebar:
         # Resetta anche la memory per cancellare il contesto
         st.session_state.memory = Memory()
         st.session_state.chatbot.memory = st.session_state.memory
+        st.session_state.debug_logs = []
         st.rerun()
     
     st.markdown("---")
@@ -273,12 +330,51 @@ if submit_button and user_input:
         try:
             # Ottieni risposta dal chatbot
             response = st.session_state.chatbot.ask(user_input, k=k)
+            debug_info = st.session_state.chatbot.last_debug_info
+
+            # Salva log di debug
+            if debug_info:
+                st.session_state.debug_logs.append(debug_info)
+                if len(st.session_state.debug_logs) > 50:
+                    st.session_state.debug_logs = st.session_state.debug_logs[-50:]
             
             # Aggiungi risposta bot
             st.session_state.messages.append({"role": "assistant", "content": response})
             
             # Mostra risposta bot
             st.markdown(f'<div class="bot-message">🤖 {response}</div>', unsafe_allow_html=True)
+
+            # Se il debug è attivo, mostra i dettagli anche nell'interfaccia principale
+            if st.session_state.debug and debug_info:
+                with st.expander("🔍 Dettagli retrieval", expanded=False):
+                    st.markdown("**Query riscritta**")
+                    st.code(debug_info.get("rewritten_query") or "—", language="text")
+
+                    if debug_info.get("fallback_overridden"):
+                        st.warning("Il modello aveva restituito il fallback: mostrato il testo dei chunk più rilevanti.")
+                    elif debug_info.get("fallback_triggered"):
+                        st.info("Il modello ha restituito il fallback (nessuna informazione rilevante trovata).")
+
+                    chunks = debug_info.get("chunks", [])
+                    if chunks:
+                        st.markdown("**Chunk recuperati**")
+                        for chunk in chunks[:3]:
+                            source = chunk.get("metadata", {}).get("source", "sorgente sconosciuta")
+                            score = chunk.get("score")
+                            score_label = None
+                            if score is not None:
+                                try:
+                                    score_label = round(float(score), 3)
+                                except (TypeError, ValueError):
+                                    score_label = score
+                            preview = chunk.get("text", "").strip().replace("\n", " ")
+                            preview = preview[:320] + ("…" if len(preview) > 320 else "")
+                            bullet = f"- `{source}`"
+                            if score_label is not None:
+                                bullet += f" · score: {score_label}"
+                            st.markdown(f"{bullet}\n\n    {preview}")
+                    else:
+                        st.info("Nessun chunk recuperato dal vector store.")
             
         except Exception as e:
             error_message = f"Si è verificato un errore: {str(e)}"

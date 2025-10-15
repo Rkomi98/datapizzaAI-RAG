@@ -5,6 +5,7 @@ Integra Google Client (Gemini 2.5 Flash) con Memory per conversazioni contestual
 """
 
 import os
+from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
@@ -30,11 +31,12 @@ EMBEDDING_MODEL = os.getenv("FAQ_EMBEDDING_MODEL", "gemini-embedding-001")
 class FAQChatbot:
     """Chatbot RAG per le FAQ di Datapizza-AI con Google Gemini e Memory."""
     
-    def __init__(self, memory: Memory = None):
+    def __init__(self, memory: Memory = None, debug_mode: bool = False):
         """Inizializza il chatbot con tutti i componenti necessari.
         
         Args:
             memory: Istanza di Memory per gestire la cronologia della conversazione
+            debug_mode: Abilita il logging di debug dei passi di retrieval
         """
         self.google_api_key = os.getenv("GOOGLE_API_KEY")
         
@@ -43,6 +45,8 @@ class FAQChatbot:
         
         # Inizializza o usa la memory fornita
         self.memory = memory if memory is not None else Memory()
+        self.debug_mode = debug_mode
+        self.last_debug_info: Dict[str, Any] | None = None
         
         # Inizializza componenti
         self._setup_clients()
@@ -134,6 +138,10 @@ Informazioni dalle FAQ:
         self.dag_pipeline.connect("embedder", "retriever", target_key="query_vector")
         self.dag_pipeline.connect("retriever", "prompt", target_key="chunks")
         self.dag_pipeline.connect("prompt", "generator", target_key="memory")
+
+    def set_debug_mode(self, enabled: bool):
+        """Abilita o disabilita il debug runtime (override della variabile d'ambiente)."""
+        self.debug_mode = enabled
     
     def ask(self, question: str, k: int = 10, score_threshold: float = 0.5) -> str:
         """
@@ -148,6 +156,16 @@ Informazioni dalle FAQ:
         Returns:
             La risposta del chatbot
         """
+        env_debug = os.getenv("FAQ_DEBUG", "").lower() in {"1", "true", "yes", "on"}
+        debug_mode = self.debug_mode or env_debug
+        self.last_debug_info = None
+
+        fallback_message = "Non sono ancora state fatte domande a riguardo."
+        fallback_triggered = False
+        fallback_overridden = False
+
+        chunk_previews: List[Dict[str, Any]] = []
+
         try:
             # Esegui la pipeline con memory e query rewriter
             result = self.dag_pipeline.run({
@@ -164,6 +182,28 @@ Informazioni dalle FAQ:
                 }
             })
             
+            rewritten_query = result.get("rewriter")
+            retrieved_chunks = result.get("retriever") or []
+
+            chunk_previews = [
+                {
+                    "id": getattr(chunk, "id", None),
+                    "score": getattr(chunk, "score", None),
+                    "metadata": getattr(chunk, "metadata", {}),
+                    "text": chunk.text,
+                }
+                for chunk in retrieved_chunks
+            ]
+
+            if debug_mode:
+                print("🔍 FAQ_DEBUG attivo")
+                print(f"   • Query originale : {question}")
+                print(f"   • Query riscritta : {rewritten_query}")
+                print(f"   • Chunk recuperati: {len(retrieved_chunks)}")
+                for idx, chunk in enumerate(retrieved_chunks[:3], 1):
+                    preview = chunk.text.replace("\n", " ")[:240]
+                    print(f"     #{idx}: {preview}{'…' if len(chunk.text) > 240 else ''}")
+
             # Estrai la risposta dal generator
             generator_result = result.get("generator")
             
@@ -191,7 +231,19 @@ Informazioni dalle FAQ:
             else:
                 response_text = str(generator_result)
                 response_content = [TextBlock(content=response_text)]
+
+            if response_text.strip() == fallback_message and retrieved_chunks:
+                fallback_triggered = True
+                # Evita falso negativo se ci sono chunk utili
+                combined = "\n\n".join(chunk.text.strip() for chunk in retrieved_chunks[:2])
+                response_text = combined.strip()
+                response_content = [TextBlock(content=response_text)]
+                if debug_mode:
+                    print("⚠️  Fallback evitato: presenti chunk rilevanti, ritorno il testo grezzo.")
+                fallback_overridden = True
             
+            final_response = response_text.strip()
+
             # Salva il turno di conversazione nella memory
             self.memory.add_turn(TextBlock(content=question), role=ROLE.USER)
             if response_content:
@@ -202,8 +254,18 @@ Informazioni dalle FAQ:
                     self.memory.add_turn(response_content, role=ROLE.ASSISTANT)
             else:
                 self.memory.add_turn(TextBlock(content=response_text), role=ROLE.ASSISTANT)
+
+            self.last_debug_info = {
+                "question": question,
+                "rewritten_query": rewritten_query,
+                "debug_enabled": debug_mode,
+                "chunks": chunk_previews,
+                "fallback_triggered": fallback_triggered,
+                "fallback_overridden": fallback_overridden,
+                "response": final_response,
+            }
             
-            return response_text.strip()
+            return final_response
             
         except Exception as e:
             print(f"⚠ Errore durante l'elaborazione: {e}")

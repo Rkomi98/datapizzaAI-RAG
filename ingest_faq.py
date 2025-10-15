@@ -23,6 +23,7 @@ load_dotenv()
 
 EMBEDDING_MODEL = os.getenv("FAQ_EMBEDDING_MODEL", "gemini-embedding-001")
 EMBEDDING_DIM_OVERRIDE = os.getenv("FAQ_EMBEDDING_DIM")
+SCRIPTS_DIR = "Scripts"
 
 
 def _detect_embedding_dimension(embedder_client: GoogleEmbedder) -> int:
@@ -39,6 +40,31 @@ def _detect_embedding_dimension(embedder_client: GoogleEmbedder) -> int:
     raise ValueError(
         "Impossibile determinare la dimensione degli embedding restituiti da Google Embedder."
     )
+
+
+def _gather_faq_files() -> list[str]:
+    """Restituisce la lista dei file FAQ da processare, includendo eventuali script."""
+    faq_files = [
+        "datapizza_faq.md",
+        "FAQ_Video.md",
+    ]
+
+    if os.path.isdir(SCRIPTS_DIR):
+        for filename in sorted(os.listdir(SCRIPTS_DIR)):
+            path = os.path.join(SCRIPTS_DIR, filename)
+            if os.path.isfile(path) and filename.lower().endswith(".md"):
+                faq_files.append(path)
+
+    return faq_files
+
+
+def _detect_language_from_path(path: str) -> str:
+    """Deduce la lingua dal percorso del file (Scripts considerato inglese)."""
+    normalized = os.path.normpath(path)
+    first_segment = normalized.split(os.sep)[0].lower()
+    if first_segment == SCRIPTS_DIR.lower():
+        return "en"
+    return "it"
 
 def _extract_vector_dimensions(collection_info: qdrant_models.CollectionInfo) -> dict[str, int]:
     """Return the dense vector dimensions configured on the collection."""
@@ -121,17 +147,20 @@ def ingest_documents(pipeline, faq_files):
             # Leggi il contenuto del file
             with open(faq_file, 'r', encoding='utf-8') as f:
                 content = f.read()
+
+            language = _detect_language_from_path(faq_file)
+            category = "scripts" if language == "en" else "faq"
             
             # Il TextParser si aspetta una stringa, non un filepath
             pipeline.run(
                 content, 
                 metadata={
                     "source": faq_file,
-                    "type": "faq",
-                    "language": "it"
+                    "type": category,
+                    "language": language
                 }
             )
-            print(f"✓ {faq_file} processato con successo")
+            print(f"✓ {faq_file} processato con successo ({language.upper()})")
         except Exception as e:
             print(f"✗ Errore nel processare {faq_file}: {e}")
             import traceback
@@ -176,10 +205,11 @@ def main():
     pipeline = create_ingestion_pipeline(vectorstore, embedder_client)
     
     # File FAQ da processare
-    faq_files = [
-        "datapizza_faq.md",
-        "FAQ_Video.md"
-    ]
+    faq_files = _gather_faq_files()
+    print(f"\n🗂️ Documenti rilevati ({len(faq_files)}):")
+    for path in faq_files:
+        lang = _detect_language_from_path(path)
+        print(f"   • {path} [{lang.upper()}]")
     
     # Ingest documenti
     print("\n📚 Ingestion documenti...")
