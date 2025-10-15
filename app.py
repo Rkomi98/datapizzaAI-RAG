@@ -32,55 +32,77 @@ st.markdown("""
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
     
     /* Messaggi */
     .user-message {
         background-color: #667eea;
-        color: white;
-        padding: 1rem;
+        color: #ffffff;
+        padding: 1.2rem;
         border-radius: 1rem;
-        margin: 0.5rem 0;
+        margin: 0.8rem 0;
         margin-left: 20%;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-weight: 500;
     }
-    
+
     .bot-message {
-        background-color: #f7f7f8;
-        color: #1a1a1a;
-        padding: 1rem;
+        background-color: #ffffff;
+        color: #2d2d2d;
+        padding: 1.2rem;
         border-radius: 1rem;
-        margin: 0.5rem 0;
+        margin: 0.8rem 0;
         margin-right: 20%;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e8e8e8;
+        font-weight: 400;
+        line-height: 1.5;
     }
     
     /* Input box */
     .stTextInput > div > div > input {
         border-radius: 2rem;
-        border: 2px solid #e0e0e0;
-        padding: 0.75rem 1.5rem;
+        border: 2px solid #d0d0d0;
+        padding: 0.9rem 1.5rem;
+        font-size: 1rem;
+        background-color: #ffffff;
+        color: #2d2d2d;
+        transition: all 0.3s ease;
     }
-    
+
     .stTextInput > div > div > input:focus {
         border-color: #667eea;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        background-color: #fafafa;
     }
-    
+
+    .stTextInput > div > div > input::placeholder {
+        color: #888;
+        font-weight: 400;
+    }
+
     /* Pulsanti */
     .stButton > button {
         border-radius: 2rem;
-        padding: 0.5rem 2rem;
+        padding: 0.6rem 2rem;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border: none;
-        color: white;
+        color: #ffffff;
         font-weight: 600;
-        transition: transform 0.2s;
+        font-size: 1rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
-    
+
     .stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
     }
     
     /* Sidebar */
@@ -90,11 +112,25 @@ st.markdown("""
     
     /* Info boxes */
     .info-box {
-        background-color: #f0f2f6;
+        background-color: #ffffff;
         border-left: 4px solid #667eea;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e8e8e8;
+    }
+
+    .info-box h4 {
+        color: #667eea;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .info-box p {
+        color: #555;
+        line-height: 1.6;
+        margin: 0;
     }
     
     /* Footer */

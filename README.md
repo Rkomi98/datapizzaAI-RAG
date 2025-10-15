@@ -101,14 +101,14 @@ python chatbot_faq.py # Terminale
 ```
 👤 Tu: Cosa differenzia Datapizza-AI da Langchain?
 
-🤖 Bot: La differenza principale con altri framework è il diverso livello 
-di astrazione dei moduli. Langchain usa astrazioni troppo elevate che non 
+🤖 Bot: La differenza principale con altri framework è il diverso livello
+di astrazione dei moduli. Langchain usa astrazioni troppo elevate che non
 permettono di uscire facilmente dai binari imposti...
 
 👤 Tu: Supporta modelli open-source?
 
-🤖 Bot: Sì, il framework supporta anche modelli Llama. Nella documentazione 
-su docs.datapizza.ai puoi trovare le istruzioni per eseguire un client 
+🤖 Bot: Sì, il framework supporta anche modelli Llama. Nella documentazione
+su docs.datapizza.ai puoi trovare le istruzioni per eseguire un client
 Llama o un server Llama in locale...
 
 👤 Tu: Che cos'è la fotosintesi clorofilliana?
@@ -135,8 +135,10 @@ datapizzaAI-RAG/
 ├── .env.example              # 📋 Template configurazione
 ├── .gitignore                # 🚫 Esclusioni Git
 ├── README.md                 # 📖 Questo file
-├── QUICK_START.md            # ⚡ Guida avvio rapido
+├── START_HERE.md             # 🚀 Guida avvio rapido
 ├── USAGE_GUIDE.md            # 📚 Guida utente dettagliata
+├── WEB_FEATURES.md           # 🌐 Caratteristiche frontend
+├── INTERFACE_PREVIEW.md      # 🎨 Anteprima interfaccia
 └── setup_instructions.md     # 🛠️ Istruzioni setup complete
 ```
 
