@@ -1,5 +1,5 @@
 """
-Frontend web per il Chatbot RAG Datapizza-AI.
+Frontend web per FAQaccia.
 Integra FAQ locali e documentazione ufficiale (MCP) in un'unica interfaccia Streamlit.
 """
 
@@ -9,136 +9,262 @@ from datapizza.memory import Memory
 
 # Configurazione della pagina
 st.set_page_config(
-    page_title="Chatbot FAQ Datapizza-AI",
+    page_title="FAQaccia",
     page_icon="🍕",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# CSS personalizzato per un look minimal e moderno
+# CSS personalizzato per un look immersivo
 st.markdown("""
 <style>
-    /* Stile generale */
-    .stApp {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    /* Header */
-    .main-header {
-        text-align: center;
-        padding: 2rem 0 1rem 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Messaggi */
-    .user-message {
-        background-color: #667eea;
-        color: #ffffff;
-        padding: 1.2rem;
-        border-radius: 1rem;
-        margin: 0.8rem 0;
-        margin-left: 20%;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        font-weight: 500;
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+    :root {
+        color-scheme: light dark;
     }
 
-    .bot-message {
-        background-color: #ffffff;
-        color: #2d2d2d;
-        padding: 1.2rem;
-        border-radius: 1rem;
-        margin: 0.8rem 0;
-        margin-right: 20%;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e8e8e8;
-        font-weight: 400;
-        line-height: 1.5;
+    html, body, [class*="css"] {
+        font-family: 'Poppins', sans-serif;
     }
-    
-    /* Input box */
+
+    body {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.14) 0%, transparent 45%),
+            radial-gradient(circle at 80% 0%, rgba(246, 114, 128, 0.16) 0%, transparent 40%),
+            #0b1220;
+        color: #e2e8f0;
+    }
+
+    .stApp {
+        background: linear-gradient(160deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.45) 100%);
+    }
+
+    .main {
+        padding: 0 !important;
+    }
+
+    .app-wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.5rem 1.5rem 4rem;
+        position: relative;
+    }
+
+    .hero {
+        text-align: center;
+        padding: 3.5rem 0 2rem;
+    }
+
+    .faqaccia-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.8rem;
+        line-height: 1.15;
+        margin: 1.2rem 0 0.8rem;
+        color: #f8fafc;
+    }
+
+    .hero-subtitle {
+        color: #cbd5f5;
+        max-width: 640px;
+        margin: 0 auto;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+
+    .chat-shell {
+        margin-top: 1.4rem;
+        background: rgba(15, 23, 42, 0.82);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 24px;
+        padding: 1.4rem 1.6rem 1.2rem;
+        backdrop-filter: blur(22px);
+        box-shadow: 0 22px 50px rgba(15, 23, 42, 0.55);
+    }
+
+    .chat-message {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin: 1rem 0;
+    }
+
+    .chat-message .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #0f172a;
+        background: linear-gradient(135deg, #fef3c7, #fbbf24);
+        box-shadow: 0 12px 24px rgba(251, 191, 36, 0.25);
+    }
+
+    .chat-message.assistant .avatar {
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: #f8fafc;
+        box-shadow: 0 12px 28px rgba(99, 102, 241, 0.28);
+    }
+
+    .chat-message .bubble {
+        max-width: 76%;
+        background: rgba(15, 23, 42, 0.48);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        padding: 1rem 1.2rem;
+        border-radius: 18px;
+        font-size: 0.98rem;
+        line-height: 1.6;
+        color: #e2e8f0;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35);
+    }
+
+    .chat-message .bubble p {
+        margin: 0 0 0.6rem;
+    }
+
+    .chat-message .bubble p:last-child {
+        margin-bottom: 0;
+    }
+
+    .chat-message .bubble ul {
+        margin: 0 0 0.6rem 1.2rem;
+    }
+
+    .chat-message.user {
+        flex-direction: row-reverse;
+        text-align: right;
+    }
+
+    .chat-message.user .bubble {
+        background: linear-gradient(135deg, #fb7185, #f97316);
+        color: #0f172a;
+        border: none;
+        box-shadow: 0 18px 28px rgba(249, 115, 22, 0.28);
+    }
+
+    .chat-message .bubble code {
+        background: rgba(148, 163, 184, 0.18);
+        color: #f8fafc;
+        padding: 0.2rem 0.35rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    .chat-message .bubble pre {
+        background: rgba(15, 23, 42, 0.88);
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        color: #f8fafc;
+        overflow-x: auto;
+    }
+
+    .chat-message.user .bubble code {
+        background: rgba(255, 255, 255, 0.25);
+        color: #111827;
+    }
+
+    .empty-chat {
+        text-align: center;
+        padding: 2.8rem 1.2rem;
+        border: 1px dashed rgba(148, 163, 184, 0.32);
+        border-radius: 20px;
+        background: rgba(15, 23, 42, 0.45);
+        color: #cbd5f5;
+        margin: 1rem 0;
+    }
+
+    .empty-chat h4 {
+        margin-bottom: 0.6rem;
+        color: #f8fafc;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .empty-chat ul {
+        margin: 1.1rem auto 0;
+        padding: 0;
+        list-style: none;
+        display: inline-block;
+        text-align: left;
+    }
+
+    .empty-chat ul li {
+        position: relative;
+        padding-left: 1.3rem;
+        margin: 0.35rem 0;
+    }
+
+    .empty-chat ul li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #38bdf8;
+        font-weight: 700;
+    }
+
+    .input-card {
+        margin-top: 1.8rem;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 26px;
+        padding: 1.2rem 1.4rem 1.1rem;
+        backdrop-filter: blur(18px);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.45);
+    }
+
     .stTextInput > div > div > input {
-        border-radius: 2rem;
-        border: 2px solid #d0d0d0;
-        padding: 0.9rem 1.5rem;
-        font-size: 1rem;
-        background-color: #ffffff;
-        color: #2d2d2d;
-        transition: all 0.3s ease;
+        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        padding: 0.95rem 1.2rem;
+        color: #f1f5f9;
     }
 
     .stTextInput > div > div > input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        background-color: #fafafa;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+        background: rgba(15, 23, 42, 0.78);
     }
 
     .stTextInput > div > div > input::placeholder {
-        color: #888;
-        font-weight: 400;
+        color: rgba(226, 232, 240, 0.45);
     }
 
-    /* Pulsanti */
     .stButton > button {
-        border-radius: 2rem;
-        padding: 0.6rem 2rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        color: #ffffff;
+        border-radius: 14px;
+        padding: 0.6rem 0;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.95rem;
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        border: none;
+        color: #f8fafc;
+        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.3);
         transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
 
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-    }
-    
-    /* Sidebar */
-    .sidebar-content {
-        padding: 1rem;
-    }
-    
-    /* Info boxes */
-    .info-box {
-        background-color: #ffffff;
-        border-left: 4px solid #667eea;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e8e8e8;
+        transform: translateY(-1px);
+        box-shadow: 0 18px 30px rgba(56, 189, 248, 0.35);
     }
 
-    .info-box h4 {
-        color: #667eea;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-    }
-
-    .info-box p {
-        color: #555;
-        line-height: 1.6;
-        margin: 0;
-    }
-    
-    /* Footer */
     .footer {
         text-align: center;
-        padding: 2rem 0;
-        color: #888;
-        font-size: 0.9rem;
+        padding: 3rem 0 1rem;
+        color: rgba(226, 232, 240, 0.68);
+        font-size: 0.85rem;
+    }
+
+    .footer a {
+        color: #c4d1ff;
+        text-decoration: none;
+    }
+
+    .footer a:hover {
+        text-decoration: underline;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -184,10 +310,6 @@ elif st.session_state.get("chatbot_ready", False):
     st.session_state.chatbot.set_debug_mode(st.session_state.debug)
     st.session_state.use_official_docs = st.session_state.chatbot.use_official_docs
 
-# Header
-st.markdown('<h1 class="main-header">🍕 Chatbot Datapizza-AI</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #666; margin-bottom: 2rem;">FAQ + documentazione ufficiale in un unico assistente.</p>', unsafe_allow_html=True)
-
 # Verifica se il chatbot è pronto
 if not st.session_state.chatbot_ready:
     st.error(f"""
@@ -202,6 +324,20 @@ if not st.session_state.chatbot_ready:
     4. Aver configurato Qdrant (host remoto o embedded) tramite le variabili `QDRANT_*`
     """)
     st.stop()
+
+# Wrapper principale
+st.markdown('<div class="app-wrapper">', unsafe_allow_html=True)
+
+# Hero section
+st.markdown(
+    """
+    <section class="hero">
+        <h1 class="faqaccia-title">FAQaccia</h1>
+        <p class="hero-subtitle">Il chatbot per rispondere ai dubbi sul framework Datapizza-AI.</p>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Sidebar con informazioni e suggerimenti
 with st.sidebar:
@@ -344,58 +480,66 @@ with st.sidebar:
 chat_container = st.container()
 
 with chat_container:
-    # Mostra messaggi esistenti
-    for message in st.session_state.messages:
-        if message["role"] == "user":
-            st.markdown(f'<div class="user-message">👤 {message["content"]}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="bot-message">🤖 {message["content"]}</div>', unsafe_allow_html=True)
-
-# Input utente (sempre visibile in fondo)
-st.markdown("---")
+    st.markdown('<div class="chat-shell">', unsafe_allow_html=True)
+    if st.session_state.messages:
+        for message in st.session_state.messages:
+            role = message["role"]
+            avatar = "TU" if role == "user" else "AI"
+            classes = "chat-message user" if role == "user" else "chat-message assistant"
+            st.markdown(
+                f'<div class="{classes}"><div class="avatar">{avatar}</div><div class="bubble">',
+                unsafe_allow_html=True,
+            )
+            st.markdown(message["content"])
+            st.markdown("</div></div>", unsafe_allow_html=True)
+    else:
+        st.markdown(
+            """
+            <div class="empty-chat">
+                <h4>Benvenuto in FAQaccia!</h4>
+                <p>Chiedimi qualcosa per iniziare oppure prova uno dei suggerimenti.</p>
+                <ul>
+                    <li>Come posso integrare Datapizza-AI in un progetto esistente?</li>
+                    <li>Quali differenze ci sono rispetto a un classico framework RAG?</li>
+                    <li>Serve una chiave API per usare la documentazione ufficiale?</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Form per l'input
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
 with st.form(key="chat_form", clear_on_submit=True):
-    col1, col2 = st.columns([6, 1])
-    
+    col1, col2 = st.columns([7, 1.2])
+
     with col1:
         user_input = st.text_input(
             "Messaggio",
             placeholder="Scrivi la tua domanda qui...",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
         )
-    
+
     with col2:
         submit_button = st.form_submit_button("Invia", use_container_width=True)
 
 # Gestione invio messaggio
 if submit_button and user_input:
-    # Aggiungi messaggio utente
     st.session_state.messages.append({"role": "user", "content": user_input})
-    
-    # Mostra messaggio utente
-    st.markdown(f'<div class="user-message">👤 {user_input}</div>', unsafe_allow_html=True)
-    
-    # Mostra indicatore di caricamento
+
     with st.spinner("🤔 Sto pensando..."):
         try:
-            # Ottieni risposta dal chatbot
             response = st.session_state.chatbot.ask(user_input, k=k)
             debug_info = st.session_state.chatbot.last_debug_info
 
-            # Salva log di debug
             if debug_info:
                 st.session_state.debug_logs.append(debug_info)
                 if len(st.session_state.debug_logs) > 50:
                     st.session_state.debug_logs = st.session_state.debug_logs[-50:]
-            
-            # Aggiungi risposta bot
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            
-            # Mostra risposta bot
-            st.markdown(f'<div class="bot-message">🤖 {response}</div>', unsafe_allow_html=True)
 
-            # Se il debug è attivo, mostra i dettagli anche nell'interfaccia principale
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
             if st.session_state.debug and debug_info:
                 with st.expander("🔍 Dettagli retrieval", expanded=False):
                     st.markdown("**Query riscritta**")
@@ -449,32 +593,24 @@ if submit_button and user_input:
                                 if score_label is not None:
                                     bullet += f" · score: {score_label}"
                                 st.markdown(f"{bullet}\n\n    {preview}")
-            
+
         except Exception as e:
             error_message = f"Si è verificato un errore: {str(e)}"
             st.error(error_message)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
-    
-    # Ricarica la pagina per mostrare i nuovi messaggi
+
     st.rerun()
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div class="footer">
-    Costruito con ❤️ usando <a href="https://docs.datapizza.ai/" target="_blank">Datapizza-AI</a> 
-    e <a href="https://streamlit.io/" target="_blank">Streamlit</a>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-# Messaggio di benvenuto (solo se non ci sono messaggi)
-if len(st.session_state.messages) == 0:
-    st.markdown("""
-    <div class="info-box">
-        <h4>👋 Benvenuto!</h4>
-        <p>Sono il tuo assistente virtuale per le FAQ di Datapizza-AI. 
-        Puoi farmi qualsiasi domanda sul framework e cercherò di risponderti basandomi 
-        sulle informazioni disponibili.</p>
-        <p><strong>Inizia facendo una domanda qui sotto! ⬇️</strong></p>
+# Footer
+st.markdown(
+    """
+    <div class="footer">
+        Costruito con ❤️ usando <a href="https://docs.datapizza.ai/" target="_blank">Datapizza-AI</a>
+        e <a href="https://streamlit.io/" target="_blank">Streamlit</a>
     </div>
-    """, unsafe_allow_html=True)
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
