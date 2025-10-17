@@ -1,5 +1,6 @@
 """
-Chatbot RAG Enhanced - Integra FAQ locali e documentazione ufficiale via MCP
+Chatbot RAG Enhanced - Integra FAQ locali e documentazione ufficiale via MCP.
+Gestisce automaticamente l'assenza del modulo MCP in ambienti deployati.
 """
 
 import os
@@ -24,11 +25,24 @@ from qdrant_config import (
     describe_qdrant_target,
 )
 
-# Aggiungi il percorso del MCP server al path
-mcp_server_path = Path(__file__).parent / "mcp-server-datapizza" / "datapizza-mcp-server" / "src"
-sys.path.insert(0, str(mcp_server_path))
+# Aggiungi il percorso del MCP server al path (se presente) e gestisci import opzionale
+MCP_AVAILABLE = False
+MCP_IMPORT_ERROR: Exception | None = None
+query_documentation = None
 
-from datapizza_mcp.retriever import query_documentation
+_mcp_server_path = Path(__file__).parent / "mcp-server-datapizza" / "datapizza-mcp-server" / "src"
+if _mcp_server_path.exists():
+    sys.path.insert(0, str(_mcp_server_path))
+
+try:
+    from datapizza_mcp.retriever import query_documentation as _query_documentation
+
+    query_documentation = _query_documentation
+    MCP_AVAILABLE = True
+except ModuleNotFoundError as exc:
+    MCP_IMPORT_ERROR = exc
+except Exception as exc:  # pragma: no cover - best-effort informative fallback
+    MCP_IMPORT_ERROR = exc
 
 # Carica variabili d'ambiente
 load_dotenv()
@@ -54,7 +68,23 @@ class EnhancedFAQChatbot:
         
         self.memory = memory if memory is not None else Memory()
         self.debug_mode = debug_mode
-        self.use_official_docs = use_official_docs
+        self.supports_official_docs = MCP_AVAILABLE and query_documentation is not None
+
+        if use_official_docs and not self.supports_official_docs:
+            details = (
+                f" Dettagli import: {MCP_IMPORT_ERROR}"
+                if MCP_IMPORT_ERROR
+                else ""
+            )
+            raise ImportError(
+                "Impossibile caricare la documentazione ufficiale (modulo 'datapizza_mcp' non disponibile). "
+                "Installa il server MCP, ad esempio aggiungendo "
+                "'git+https://github.com/mat1312/mcp-server-datapizza@main#subdirectory=datapizza-mcp-server' "
+                "a requirements.txt."
+                f"{details}"
+            )
+
+        self.use_official_docs = use_official_docs and self.supports_official_docs
         self.last_debug_info: Dict[str, Any] | None = None
         
         # Inizializza componenti
@@ -211,7 +241,7 @@ Informazioni dalle FAQ:
             
             # 2. Interroga la documentazione ufficiale (asincrono)
             official_docs_text = ""
-            if self.use_official_docs:
+            if self.use_official_docs and query_documentation:
                 if debug_mode:
                     print("🔍 Step 2: Interrogo la documentazione ufficiale...")
                 
@@ -296,6 +326,7 @@ Rispondi alla domanda basandoti sulle informazioni sopra riportate."""
                 "response": final_response_text,
                 "official_docs_used": bool(official_docs_text),
                 "official_docs_excerpt": official_excerpt,
+                "official_docs_supported": self.supports_official_docs,
             }
             
             return final_response_text

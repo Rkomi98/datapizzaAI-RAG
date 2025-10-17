@@ -273,6 +273,7 @@ with st.sidebar:
         "Includi documentazione ufficiale",
         value=st.session_state.use_official_docs,
         help="Abilita il recupero tramite MCP della collection 'datapizza_official_docs'.",
+        disabled=not getattr(st.session_state.chatbot, "supports_official_docs", False),
     )
     if docs_toggle != st.session_state.use_official_docs:
         st.session_state.use_official_docs = docs_toggle
