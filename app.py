@@ -177,9 +177,12 @@ if should_init_chatbot:
         except Exception as e:
             st.session_state.chatbot_ready = False
             st.session_state.error_message = str(e)
+    if st.session_state.get("chatbot_ready", False):
+        st.session_state.use_official_docs = st.session_state.chatbot.use_official_docs
 elif st.session_state.get("chatbot_ready", False):
     # Mantieni sincronizzato il flag di debug
     st.session_state.chatbot.set_debug_mode(st.session_state.debug)
+    st.session_state.use_official_docs = st.session_state.chatbot.use_official_docs
 
 # Header
 st.markdown('<h1 class="main-header">🍕 Chatbot Datapizza-AI</h1>', unsafe_allow_html=True)
@@ -262,6 +265,25 @@ with st.sidebar:
             if last_debug.get("official_docs_used") and docs_excerpt:
                 st.markdown("**Documentazione ufficiale (estratto)**")
                 st.code(docs_excerpt, language="markdown")
+                doc_chunks = last_debug.get("official_docs_chunks") or []
+                if doc_chunks:
+                    st.markdown("**Chunk documentazione (max 2)**")
+                    for chunk in doc_chunks[:2]:
+                        meta = chunk.get("metadata", {})
+                        source = meta.get("file_path") or meta.get("source") or "documentazione"
+                        score = chunk.get("score")
+                        score_label = None
+                        if score is not None:
+                            try:
+                                score_label = round(float(score), 3)
+                            except (TypeError, ValueError):
+                                score_label = score
+                        preview = (chunk.get("text") or "").strip().replace("\n", " ")
+                        preview = preview[:220] + ("…" if len(preview) > 220 else "")
+                        bullet = f"- `{source}`"
+                        if score_label is not None:
+                            bullet += f" · score: {score_label}"
+                        st.markdown(f"{bullet}\n\n    {preview}")
         else:
             st.info("Invia una domanda per visualizzare i dettagli di debug.")
     
@@ -269,11 +291,15 @@ with st.sidebar:
     
     st.markdown("### ⚙️ Impostazioni")
 
+    docs_supported = getattr(st.session_state.chatbot, "supports_official_docs", False)
+    if not docs_supported:
+        st.info("Configura OPENAI_API_KEY per abilitare la documentazione ufficiale (Qdrant deve contenere 'datapizza_official_docs').")
+
     docs_toggle = st.checkbox(
         "Includi documentazione ufficiale",
         value=st.session_state.use_official_docs,
         help="Abilita il recupero tramite MCP della collection 'datapizza_official_docs'.",
-        disabled=not getattr(st.session_state.chatbot, "supports_official_docs", False),
+        disabled=not docs_supported,
     )
     if docs_toggle != st.session_state.use_official_docs:
         st.session_state.use_official_docs = docs_toggle
@@ -404,6 +430,25 @@ if submit_button and user_input:
                     if debug_info.get("official_docs_used") and docs_excerpt:
                         st.markdown("**Documentazione ufficiale (estratto)**")
                         st.code(docs_excerpt, language="markdown")
+                        doc_chunks = debug_info.get("official_docs_chunks") or []
+                        if doc_chunks:
+                            st.markdown("**Chunk documentazione (max 3)**")
+                            for chunk in doc_chunks[:3]:
+                                meta = chunk.get("metadata", {})
+                                source = meta.get("file_path") or meta.get("source") or "documentazione"
+                                score = chunk.get("score")
+                                score_label = None
+                                if score is not None:
+                                    try:
+                                        score_label = round(float(score), 3)
+                                    except (TypeError, ValueError):
+                                        score_label = score
+                                preview = (chunk.get("text") or "").strip().replace("\n", " ")
+                                preview = preview[:320] + ("…" if len(preview) > 320 else "")
+                                bullet = f"- `{source}`"
+                                if score_label is not None:
+                                    bullet += f" · score: {score_label}"
+                                st.markdown(f"{bullet}\n\n    {preview}")
             
         except Exception as e:
             error_message = f"Si è verificato un errore: {str(e)}"

@@ -1,13 +1,10 @@
 """
 Chatbot RAG Enhanced - Integra FAQ locali e documentazione ufficiale via MCP.
-Gestisce automaticamente l'assenza del modulo MCP in ambienti deployati.
 """
 
 import os
-import sys
 import asyncio
-from typing import Any, Dict, List
-from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
@@ -25,24 +22,7 @@ from qdrant_config import (
     describe_qdrant_target,
 )
 
-# Aggiungi il percorso del MCP server al path (se presente) e gestisci import opzionale
-MCP_AVAILABLE = False
-MCP_IMPORT_ERROR: Exception | None = None
-query_documentation = None
-
-_mcp_server_path = Path(__file__).parent / "mcp-server-datapizza" / "datapizza-mcp-server" / "src"
-if _mcp_server_path.exists():
-    sys.path.insert(0, str(_mcp_server_path))
-
-try:
-    from datapizza_mcp.retriever import query_documentation as _query_documentation
-
-    query_documentation = _query_documentation
-    MCP_AVAILABLE = True
-except ModuleNotFoundError as exc:
-    MCP_IMPORT_ERROR = exc
-except Exception as exc:  # pragma: no cover - best-effort informative fallback
-    MCP_IMPORT_ERROR = exc
+from official_docs_retriever import DocsResult, query_official_docs
 
 # Carica variabili d'ambiente
 load_dotenv()
@@ -68,21 +48,7 @@ class EnhancedFAQChatbot:
         
         self.memory = memory if memory is not None else Memory()
         self.debug_mode = debug_mode
-        self.supports_official_docs = MCP_AVAILABLE and query_documentation is not None
-
-        if use_official_docs and not self.supports_official_docs:
-            details = (
-                f" Dettagli import: {MCP_IMPORT_ERROR}"
-                if MCP_IMPORT_ERROR
-                else ""
-            )
-            raise ImportError(
-                "Impossibile caricare la documentazione ufficiale (modulo 'datapizza_mcp' non disponibile). "
-                "Installa il server MCP, ad esempio aggiungendo "
-                "'git+https://github.com/mat1312/mcp-server-datapizza@main#subdirectory=datapizza-mcp-server' "
-                "a requirements.txt."
-                f"{details}"
-            )
+        self.supports_official_docs = bool(os.getenv("OPENAI_API_KEY"))
 
         self.use_official_docs = use_official_docs and self.supports_official_docs
         self.last_debug_info: Dict[str, Any] | None = None
@@ -241,18 +207,25 @@ Informazioni dalle FAQ:
             
             # 2. Interroga la documentazione ufficiale (asincrono)
             official_docs_text = ""
-            if self.use_official_docs and query_documentation:
+            official_docs_previews: Optional[List[Dict[str, Any]]] = None
+            if self.use_official_docs:
                 if debug_mode:
                     print("🔍 Step 2: Interrogo la documentazione ufficiale...")
                 
                 try:
-                    official_docs_text = await query_documentation(question, max_results=3)
+                    docs_result: DocsResult = await query_official_docs(question, max_results=3)
+                    official_docs_text = docs_result.combined_text
+                    official_docs_previews = docs_result.chunk_previews
                     if debug_mode:
-                        print(f"   • Documentazione ufficiale recuperata: {len(official_docs_text)} caratteri")
+                        print(
+                            f"   • Documentazione ufficiale recuperata: "
+                            f"{len(official_docs_text)} caratteri / {len(official_docs_previews or [])} chunk"
+                        )
                 except Exception as e:
                     if debug_mode:
                         print(f"   ⚠ Errore nel recuperare docs ufficiali: {e}")
                     official_docs_text = ""
+                    official_docs_previews = []
             
             # 3. Combina le informazioni e genera la risposta finale
             if debug_mode:
@@ -268,9 +241,8 @@ Informazioni dalle FAQ:
                     combined_context += f"FAQ #{i}:\n{chunk.text}\n\n"
             
             # Aggiungi docs ufficiali
-            if official_docs_text and len(official_docs_text) > 100:
-                combined_context += "\n=== DOCUMENTAZIONE UFFICIALE ===\n\n"
-                combined_context += official_docs_text + "\n\n"
+            if official_docs_text and len(official_docs_text) > 0:
+                combined_context += "\n" + official_docs_text + "\n\n"
             
             # Genera risposta finale usando il client direttamente
             final_prompt = f"""{self.system_prompt}
@@ -326,7 +298,7 @@ Rispondi alla domanda basandoti sulle informazioni sopra riportate."""
                 "response": final_response_text,
                 "official_docs_used": bool(official_docs_text),
                 "official_docs_excerpt": official_excerpt,
-                "official_docs_supported": self.supports_official_docs,
+                "official_docs_chunks": official_docs_previews or [],
             }
             
             return final_response_text

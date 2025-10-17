@@ -18,6 +18,3 @@ openai>=1.100.0
 
 # Web interface
 streamlit>=1.28.0
-
-# MCP server (installato dal repository GitHub)
-git+https://github.com/mat1312/mcp-server-datapizza@main#subdirectory=datapizza-mcp-server
