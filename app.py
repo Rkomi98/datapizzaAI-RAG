@@ -1,12 +1,11 @@
 """
-Frontend web per il Chatbot RAG FAQ Datapizza-AI.
-Interfaccia chat semplice e moderna con Streamlit.
+Frontend web per il Chatbot RAG Datapizza-AI.
+Integra FAQ locali e documentazione ufficiale (MCP) in un'unica interfaccia Streamlit.
 """
 
 import streamlit as st
-from chatbot_faq import FAQChatbot
+from chatbot_enhanced import EnhancedFAQChatbot
 from datapizza.memory import Memory
-import time
 
 # Configurazione della pagina
 st.set_page_config(
@@ -153,18 +152,26 @@ if "debug" not in st.session_state:
     st.session_state.debug = False
 if "debug_logs" not in st.session_state:
     st.session_state.debug_logs = []
+if "use_official_docs" not in st.session_state:
+    st.session_state.use_official_docs = True
 
 # Inizializza la Memory per mantenere il contesto della conversazione
 if "memory" not in st.session_state:
     st.session_state.memory = Memory()
 
-if "chatbot" not in st.session_state:
+should_init_chatbot = (
+    "chatbot" not in st.session_state
+    or not isinstance(st.session_state.get("chatbot"), EnhancedFAQChatbot)
+)
+
+if should_init_chatbot:
     with st.spinner("🔧 Inizializzazione chatbot con Google Gemini 2.5 Flash..."):
         try:
             # Passa la memory condivisa al chatbot
-            st.session_state.chatbot = FAQChatbot(
+            st.session_state.chatbot = EnhancedFAQChatbot(
                 memory=st.session_state.memory,
                 debug_mode=st.session_state.debug,
+                use_official_docs=st.session_state.use_official_docs,
             )
             st.session_state.chatbot_ready = True
         except Exception as e:
@@ -175,8 +182,8 @@ elif st.session_state.get("chatbot_ready", False):
     st.session_state.chatbot.set_debug_mode(st.session_state.debug)
 
 # Header
-st.markdown('<h1 class="main-header">🍕 Chatbot FAQ Datapizza-AI</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #666; margin-bottom: 2rem;">Chiedimi qualsiasi cosa su Datapizza-AI!</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🍕 Chatbot Datapizza-AI</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; color: #666; margin-bottom: 2rem;">FAQ + documentazione ufficiale in un unico assistente.</p>', unsafe_allow_html=True)
 
 # Verifica se il chatbot è pronto
 if not st.session_state.chatbot_ready:
@@ -187,15 +194,16 @@ if not st.session_state.chatbot_ready:
     
     **Assicurati di:**
     1. Aver eseguito l'ingestion: `python ingest_faq.py`
-    2. Aver configurato il file `.env` con GOOGLE_API_KEY
-    3. Aver configurato Qdrant (host remoto o embedded) tramite le variabili `QDRANT_*`
+    2. Aver configurato il file `.env` con GOOGLE_API_KEY e OPENAI_API_KEY
+    3. Aver indicizzato la documentazione ufficiale con `python -m datapizza_mcp.indexer`
+    4. Aver configurato Qdrant (host remoto o embedded) tramite le variabili `QDRANT_*`
     """)
     st.stop()
 
 # Sidebar con informazioni e suggerimenti
 with st.sidebar:
     st.markdown("### 🧠 Modello AI")
-    st.info("**Google Gemini 2.5 Flash** con Memory attiva")
+    st.info("**Google Gemini 2.5 Flash** con Memory attiva\n\nIntegra FAQ + documentazione ufficiale (MCP).")
     
     st.markdown("### 💡 Suggerimenti")
     st.markdown("""
@@ -250,12 +258,28 @@ with st.sidebar:
                 if score_label is not None:
                     bullet += f" · score: {score_label}"
                 st.markdown(f"{bullet}\n\n    {preview}")
+            docs_excerpt = last_debug.get("official_docs_excerpt")
+            if last_debug.get("official_docs_used") and docs_excerpt:
+                st.markdown("**Documentazione ufficiale (estratto)**")
+                st.code(docs_excerpt, language="markdown")
         else:
             st.info("Invia una domanda per visualizzare i dettagli di debug.")
     
     st.markdown("---")
     
     st.markdown("### ⚙️ Impostazioni")
+
+    docs_toggle = st.checkbox(
+        "Includi documentazione ufficiale",
+        value=st.session_state.use_official_docs,
+        help="Abilita il recupero tramite MCP della collection 'datapizza_official_docs'.",
+    )
+    if docs_toggle != st.session_state.use_official_docs:
+        st.session_state.use_official_docs = docs_toggle
+        if st.session_state.get("chatbot_ready", False):
+            st.session_state.chatbot.use_official_docs = docs_toggle
+        st.session_state.debug_logs = []
+        st.rerun()
     
     # Numero di chunks da recuperare
     k = st.slider("Chunks da recuperare", min_value=1, max_value=20, value=10, 
@@ -375,6 +399,10 @@ if submit_button and user_input:
                             st.markdown(f"{bullet}\n\n    {preview}")
                     else:
                         st.info("Nessun chunk recuperato dal vector store.")
+                    docs_excerpt = debug_info.get("official_docs_excerpt")
+                    if debug_info.get("official_docs_used") and docs_excerpt:
+                        st.markdown("**Documentazione ufficiale (estratto)**")
+                        st.code(docs_excerpt, language="markdown")
             
         except Exception as e:
             error_message = f"Si è verificato un errore: {str(e)}"

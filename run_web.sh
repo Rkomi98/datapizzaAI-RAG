@@ -26,27 +26,60 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# Verifica che l'API key sia configurata
+# Carica le variabili d'ambiente (senza esportare accidentalmente stack trace)
+set -a
+source .env
+set +a
+
+# Verifica che le API key siano configurate
 if grep -q "your_openai_api_key_here" .env; then
     echo "❌ Errore: OPENAI_API_KEY non configurata!"
     echo "Modifica il file .env e inserisci la tua OpenAI API key"
+    exit 1
+fi
+if grep -q "your_google_api_key_here" .env; then
+    echo "❌ Errore: GOOGLE_API_KEY non configurata!"
+    echo "Modifica il file .env e inserisci la tua Google API key"
+    exit 1
+fi
+
+if [ -z "${OPENAI_API_KEY:-}" ]; then
+    echo "❌ Errore: variabile OPENAI_API_KEY vuota o non presente."
+    exit 1
+fi
+
+if [ -z "${GOOGLE_API_KEY:-}" ]; then
+    echo "❌ Errore: variabile GOOGLE_API_KEY vuota o non presente."
     exit 1
 fi
 
 echo "✅ Configurazione verificata"
 echo ""
 
-# Verifica se Qdrant è in esecuzione
-echo "🔍 Verifica connessione a Qdrant..."
-if curl -s http://localhost:6333/ > /dev/null 2>&1; then
-    echo "✅ Qdrant è in esecuzione"
+# Verifica configurazione Qdrant
+echo "🔍 Verifica configurazione Qdrant..."
+if [ -n "${QDRANT_LOCATION:-}" ]; then
+    echo "ℹ️ Qdrant embedded configurato: '${QDRANT_LOCATION}'"
+elif [ -n "${QDRANT_URL:-}" ]; then
+    echo "✅ Qdrant remoto configurato: ${QDRANT_URL}"
 else
-    echo "❌ Qdrant non è in esecuzione!"
-    echo ""
-    echo "Avvia Qdrant con:"
-    echo "  docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant"
-    echo ""
-    exit 1
+    Q_HOST=${QDRANT_HOST:-localhost}
+    Q_PORT=${QDRANT_PORT:-6333}
+    SCHEME="http"
+    case "${QDRANT_HTTPS:-}" in
+        1|true|TRUE|yes|YES|on|ON) SCHEME="https" ;;
+    esac
+    Q_URL="${SCHEME}://${Q_HOST}:${Q_PORT}"
+    if curl -s "${Q_URL}/" > /dev/null 2>&1; then
+        echo "✅ Qdrant locale raggiungibile su ${Q_URL}"
+    else
+        echo "❌ Qdrant locale non raggiungibile (${Q_URL})!"
+        echo ""
+        echo "Avvia Qdrant con:"
+        echo "  docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant"
+        echo ""
+        exit 1
+    fi
 fi
 
 echo ""
@@ -64,4 +97,3 @@ echo ""
 
 # Avvia streamlit
 streamlit run app.py
-
