@@ -112,6 +112,43 @@ Questi possono essere o semplici chatbot, o magari sistemi agentici. Per esempio
 Grazie al framework risulta facile costruire un proprio sistema RAG o pipeline.
 Infine, essendo opensource, il framework è free e sei libero di usarlo come vuoi :)!
 
+---
+id: faq_structured_responses
+category: integrazioni
+tags: [structured-responses, openai-like, base_url, autenticazione, errori, server]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Ciao, ho provato ad utilizzare le structured responses con il client openai like. Nello specifico, posso utilizzare n modelli passando il base_url di un servizio che ho sviluppato e nella key le informazioni che autenticano al servizio.  
+Ottengo un Internal Server Error se uso le structured responses. Volevo chiedervi se fosse normale in quanto supportate solo dai client nativi.
+
+**A:**  
+Il server che hai sviluppato deve supportare questo tipo di risposte.  
+Bisognerebbe scendere nel dettaglio di ciò che hai costruito e dell'errore che ricevi per dare una risposta certa.  
+Sì, comunque ti direi di verificare il server che restituisce la risposta: probabilmente non supporta questo tipo di risposte.
+
+---
+id: faq_stregatto
+category: framework
+tags: [stregatto, cheshirecat, differenze, framework, applicativi]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Vale la pena sto framework e quanto ha di diverso dallo Stregatto?
+
+**A:**  
+Diciamo che coprono due esigenze diverse.  
+Il tuo fork (come CheshireCat) fornisce già applicativi funzionanti e pronti all'uso (principalmente chatbot).  
+Il tuo fork è interessante, però ha come punto di forza la creazione di applicativi già pronti, funzionanti e scalabili di CheshireCat.  
+
+Il nostro framework invece ti permette di costruire soluzioni AI scendendo più in profondità, customizzando moduli per scrivere la migliore soluzione AI per risolvere un determinato problema.  
+In sintesi, coprono due esigenze diverse.
 
 ---
 id: faq_placeholder_example
