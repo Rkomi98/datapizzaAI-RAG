@@ -151,6 +151,75 @@ Il nostro framework invece ti permette di costruire soluzioni AI scendendo più 
 In sintesi, coprono due esigenze diverse.
 
 ---
+id: faq_agent_vs_client_invoke
+category: framework
+tags: [agent, client, invoke, response, text, tool, differenze]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Perché, passando un tool direttamente a client.invoke, l'attributo response.text risulta vuoto, a differenza di quando si utilizza la classe Agent che funziona correttamente?
+
+**A:**  
+Il comportamento è corretto.  
+Un **Agent** è progettato per eseguire un tool e rielaborare la risposta.  
+Un **Client**, invece, si limita a indicare quale tool utilizzare, lasciando all'utente l'onere di eseguirlo.  
+Pertanto, è normale che `response.text` sia vuoto in quel caso.
+
+---
+id: faq_modulenotfound_tool_converter
+category: errori
+tags: [errore, ModuleNotFoundError, tool_converter, import, openai-like-client]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: Viene riscontrato l'errore `ModuleNotFoundError: No module named 'datapizza.tools.tool_converter'` durante l'import di OpenAILikeClient.
+
+**A:**  
+La soluzione consiste nell'aggiornare il pacchetto specifico con il comando:
+
+```bash
+pip install -U datapizza-ai-clients-openai-like
+
+```
+---
+id: faq_disabilitare_trace_log
+category: configurazione
+tags: [trace, log, console, verbosità, output]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: È possibile disabilitare il "trace" (i log mostrati a console) per ottenere un output pulito?
+
+**A:**  
+Sì, è possibile.  
+È stata condivisa la documentazione su come modificare il livello dei log per controllarne la verbosità e ottenere un output più pulito.
+
+---
+id: faq_structured_response_agent
+category: agenti
+tags: [structured-response, agent, sviluppo, funzionalità, output]
+updated: 2025-10-15
+status: answered
+language: it
+related: []
+---
+
+### Q: È possibile strutturare la risposta di un agente, in modo simile a come avviene con `client.structured_response`?
+
+**A:**  
+La funzionalità di *structured output* per gli agenti è attualmente in fase di sviluppo e sarà presto disponibile, data la forte richiesta da parte della community.
+
+
+---
 id: faq_placeholder_example
 category: integrazioni
 tags: [placeholder, draft]

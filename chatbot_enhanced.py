@@ -29,6 +29,45 @@ load_dotenv()
 
 EMBEDDING_MODEL = os.getenv("FAQ_EMBEDDING_MODEL", "gemini-embedding-001")
 
+LANGUAGE_CONFIG: Dict[str, Dict[str, str]] = {
+    "it": {
+        "name": "Italiano",
+        "instruction": "Rispondi sempre in italiano.",
+        "fallback": "Non ho trovato informazioni su questo argomento.",
+        "error": "Si è verificato un errore nell'elaborazione della domanda.",
+    },
+    "en": {
+        "name": "English",
+        "instruction": "Always answer in English.",
+        "fallback": "I could not find any information on this topic.",
+        "error": "An error occurred while processing your question.",
+    },
+    "de": {
+        "name": "Deutsch",
+        "instruction": "Antworte immer auf Deutsch.",
+        "fallback": "Ich habe dazu keine Informationen gefunden.",
+        "error": "Bei der Verarbeitung deiner Frage ist ein Fehler aufgetreten.",
+    },
+}
+
+BASE_SYSTEM_PROMPT_TEMPLATE = """Sei un assistente esperto di Datapizza-AI, un framework Python per applicazioni GenAI.
+
+Il tuo compito è rispondere alle domande degli utenti basandoti sulle informazioni fornite.
+
+FONTI DISPONIBILI:
+1. FAQ Locali: Domande e risposte comuni degli utenti
+2. Documentazione Ufficiale: Docs dal repository GitHub di datapizza-ai
+
+REGOLE IMPORTANTI:
+1. Usa le informazioni dalle FAQ e dalla documentazione ufficiale per rispondere
+2. Se trovi informazioni rilevanti, usale per costruire una risposta completa
+3. SOLO se non trovi NESSUNA informazione utile, rispondi: "{fallback_message}"
+4. Non inventare informazioni che non sono nelle fonti
+5. Sintetizza e organizza le informazioni in modo chiaro
+6. Mantieni un tono professionale e amichevole
+7. Se hai sia FAQ che docs ufficiali, combina le informazioni nel modo più utile
+8. {language_instruction}"""
+
 
 class EnhancedFAQChatbot:
     """Chatbot RAG che interroga sia FAQ locali che documentazione ufficiale."""
@@ -52,6 +91,8 @@ class EnhancedFAQChatbot:
 
         self.use_official_docs = use_official_docs and self.supports_official_docs
         self.last_debug_info: Dict[str, Any] | None = None
+
+        self.base_system_prompt_template = BASE_SYSTEM_PROMPT_TEMPLATE
         
         # Inizializza componenti
         self._setup_clients()
@@ -102,24 +143,6 @@ class EnhancedFAQChatbot:
         """Configura la DagPipeline per il retrieval dalle FAQ."""
         self.retriever = self._setup_vectorstore()
         
-        self.system_prompt = """Sei un assistente esperto di Datapizza-AI, un framework Python per applicazioni GenAI.
-
-Il tuo compito è rispondere alle domande degli utenti basandoti sulle informazioni fornite.
-
-FONTI DISPONIBILI:
-1. FAQ Locali: Domande e risposte comuni degli utenti
-2. Documentazione Ufficiale: Docs dal repository GitHub di datapizza-ai
-
-REGOLE IMPORTANTI:
-1. Usa le informazioni dalle FAQ e dalla documentazione ufficiale per rispondere
-2. Se trovi informazioni rilevanti, usale per costruire una risposta completa
-3. SOLO se non trovi NESSUNA informazione utile, rispondi: "Non ho trovato informazioni su questo argomento."
-4. Non inventare informazioni che non sono nelle fonti
-5. Sintetizza e organizza le informazioni in modo chiaro
-6. Mantieni un tono professionale e amichevole
-7. Se hai sia FAQ che docs ufficiali, combina le informazioni nel modo più utile
-8. Rispondi in italiano"""
-        
         # Template per il prompt
         self.prompt_template = ChatPromptTemplate(
             user_prompt_template="Domanda dell'utente: {{user_prompt}}",
@@ -150,13 +173,32 @@ Informazioni dalle FAQ:
     def set_debug_mode(self, enabled: bool):
         """Abilita o disabilita il debug runtime."""
         self.debug_mode = enabled
-    
-    async def ask_async(self, question: str, k: int = 10, score_threshold: float = 0.5) -> str:
+
+    def _get_language_config(self, language: str) -> Dict[str, str]:
+        """Restituisce la configurazione della lingua richiesta."""
+        return LANGUAGE_CONFIG.get(language, LANGUAGE_CONFIG["it"])
+
+    def _compose_system_prompt(self, language: str) -> str:
+        """Genera il prompt di sistema in base alla lingua selezionata."""
+        lang_cfg = self._get_language_config(language)
+        return self.base_system_prompt_template.format(
+            fallback_message=lang_cfg["fallback"],
+            language_instruction=lang_cfg["instruction"],
+        )
+
+    async def ask_async(
+        self,
+        question: str,
+        language: str = "it",
+        k: int = 10,
+        score_threshold: float = 0.5,
+    ) -> str:
         """
         Versione asincrona di ask() che interroga sia FAQ che docs ufficiali.
         
         Args:
             question: La domanda dell'utente
+            language: Codice lingua ISO (es. "it", "en", "de")
             k: Numero di chunks da recuperare dalle FAQ (default: 10)
             score_threshold: Soglia minima di similarity score (default: 0.5)
         
@@ -166,6 +208,9 @@ Informazioni dalle FAQ:
         env_debug = os.getenv("FAQ_DEBUG", "").lower() in {"1", "true", "yes", "on"}
         debug_mode = self.debug_mode or env_debug
         self.last_debug_info = None
+
+        lang_cfg = self._get_language_config(language)
+        system_prompt = self._compose_system_prompt(language)
 
         try:
             # 1. Interroga le FAQ locali (sincrono)
@@ -181,7 +226,7 @@ Informazioni dalle FAQ:
                 },
                 "generator": {
                     "input": question,
-                    "system_prompt": self.system_prompt,
+                    "system_prompt": system_prompt,
                     "memory": self.memory
                 }
             })
@@ -245,13 +290,14 @@ Informazioni dalle FAQ:
                 combined_context += "\n" + official_docs_text + "\n\n"
             
             # Genera risposta finale usando il client direttamente
-            final_prompt = f"""{self.system_prompt}
+            final_prompt = f"""{system_prompt}
 
 {combined_context}
 
 Domanda dell'utente: {question}
 
-Rispondi alla domanda basandoti sulle informazioni sopra riportate."""
+Rispondi alla domanda basandoti sulle informazioni sopra riportate.
+Ricorda: {lang_cfg["instruction"]}"""
             
             # Usa il client Google per generare la risposta
             final_response = self.google_client.invoke(
@@ -307,13 +353,19 @@ Rispondi alla domanda basandoti sulle informazioni sopra riportate."""
             print(f"⚠ Errore durante l'elaborazione: {e}")
             import traceback
             traceback.print_exc()
-            return "Si è verificato un errore nell'elaborazione della domanda."
+            return lang_cfg["error"]
     
-    def ask(self, question: str, k: int = 10, score_threshold: float = 0.5) -> str:
+    def ask(
+        self,
+        question: str,
+        language: str = "it",
+        k: int = 10,
+        score_threshold: float = 0.5,
+    ) -> str:
         """
         Versione sincrona di ask() (wrapper per ask_async).
         """
-        return asyncio.run(self.ask_async(question, k, score_threshold))
+        return asyncio.run(self.ask_async(question, language, k, score_threshold))
     
     def interactive_mode(self):
         """Modalità interattiva per chattare con il bot."""
