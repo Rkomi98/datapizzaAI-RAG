@@ -829,13 +829,23 @@ if submit_button and user_input:
 
     with st.spinner(ui_text("thinking_spinner")):
         try:
-            response = st.session_state.chatbot.ask(
-                user_input,
-                language=current_language_code,
-                k=k,
-            )
+            try:
+                response = st.session_state.chatbot.ask(
+                    user_input,
+                    language=current_language_code,
+                    k=k,
+                )
+            except TypeError as exc:
+                if "unexpected keyword argument 'language'" in str(exc):
+                    response = st.session_state.chatbot.ask(user_input, k=k)
+                else:
+                    raise
             debug_info = st.session_state.chatbot.last_debug_info
-
+        except Exception as e:
+            error_message = ui_text("generic_error").format(error=str(e))
+            st.error(error_message)
+            st.session_state.messages.append({"role": "assistant", "content": error_message})
+        else:
             if debug_info:
                 st.session_state.debug_logs.append(debug_info)
                 if len(st.session_state.debug_logs) > 50:
@@ -899,11 +909,6 @@ if submit_button and user_input:
                                 if score_label is not None:
                                     bullet += f"{ui_text('score_label')}{score_label}"
                                 st.markdown(f"{bullet}\n\n    {preview}")
-
-        except Exception as e:
-            error_message = ui_text("generic_error").format(error=str(e))
-            st.error(error_message)
-            st.session_state.messages.append({"role": "assistant", "content": error_message})
 
     st.rerun()
 
