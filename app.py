@@ -404,14 +404,21 @@ st.markdown("""
 
     .chat-message .bubble {
         max-width: 76%;
-        background: rgba(15, 23, 42, 0.48);
-        border: 1px solid rgba(148, 163, 184, 0.25);
+        /* Aumenta contrasto su fondale scuro */
+        background: rgba(6, 11, 22, 0.86);
+        border: 1px solid rgba(148, 163, 184, 0.35);
         padding: 1rem 1.2rem;
         border-radius: 18px;
         font-size: 0.98rem;
-        line-height: 1.6;
-        color: #e2e8f0;
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35);
+        line-height: 1.65;
+        color: #f8fafc;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.45);
+    }
+
+    /* Link più leggibili dentro le risposte */
+    .chat-message .bubble a {
+        color: #93c5fd;
+        text-decoration: underline;
     }
 
     .chat-message .bubble p {
