@@ -33,6 +33,43 @@ File Markdown → TextParser → NodeSplitter → ChunkEmbedder → Qdrant Vecto
 Query Utente → ToolRewriter → Embedder → VectorStore Retrieval → Prompt Template → Generator (Gemini 2.5 Flash) + Memory
 ```
 
+### Vista d'insieme del RAG (FAQ + docs ufficiali)
+```mermaid
+graph TD
+  subgraph Ingestion FAQ
+    A1[Markdown FAQ\n(datapizza_faq.md, FAQ_Video.md, Scripts/*.md)] --> P1[TextParser]
+    P1 --> S1[Node/Recursive Splitter]
+    S1 --> E1[ChunkEmbedder\nGoogle Gemini]
+    E1 --> Q1[(Qdrant\ncollection: datapizzai_faq)]
+  end
+
+  subgraph Ingestion Docs (MCP)
+    B1[GitHub repo\n(datapizza-ai/docs)] --> P2[TextParser]
+    P2 --> S2[RecursiveSplitter]
+    S2 --> E2[ChunkEmbedder\nOpenAI text-embedding-3-small]
+    E2 --> Q2[(Qdrant\ncollection: datapizza_official_docs)]
+  end
+
+  subgraph Retrieval & Reasoning
+    U[Domanda utente] --> RW[ToolRewriter\n(Gemini)]
+    RW --> GE[Google Embedder]
+    GE --> VR1[Qdrant search\n(datapizzai_faq)]
+
+    U -.->|MCP| EMB[OpenAI Embedding]
+    EMB --> VR2[Qdrant search\n(datapizza_official_docs)]
+
+    VR1 --> CTX[Context builder]
+    VR2 --> CTX
+    CTX --> PR[Prompt Template]
+    PR --> LLM[Gemini 2.5 Flash]
+    LLM --> OUT[Risposta finale]
+    MEM[(Memory)] <--> LLM
+  end
+
+  APP[Streamlit app.py] --> OUT
+  TEST[test_mcp_retriever.py] --> VR2
+```
+
 ## 🚀 Quick Start
 
 ### Opzione A: Interfaccia Web (Consigliata) 🌐
