@@ -1,42 +1,38 @@
-# Chatbot RAG FAQ Datapizza-AI
+# Datapizza-AI FAQ RAG Chatbot
 
-Un chatbot RAG intelligente che risponde alle domande frequenti su Datapizza-AI, costruito utilizzando il framework datapizza-ai.
+English-language documentation for developers who want to understand, run, and extend the project.
 
-## 🎯 Descrizione
+## Project overview
 
-Questo progetto implementa un sistema RAG (Retrieval-Augmented Generation) completo che:
-- **Analizza** le FAQ su Datapizza-AI contenute in file markdown
-- **Risponde** alle domande degli utenti basandosi esclusivamente sulle informazioni nelle FAQ
-- **Restituisce** un messaggio specifico quando non trova informazioni rilevanti: "Non sono ancora state fatte domande a riguardo."
+This repository contains a complete Retrieval-Augmented Generation (RAG) stack that answers questions about Datapizza-AI by combining local FAQ markdown files and the official documentation indexed via MCP. The chatbot uses Google Gemini for embeddings and generation, Streamlit for the UI, and Qdrant as the vector database. When no relevant information is found, it falls back to the exact sentence “Non sono ancora state fatte domande a riguardo.”
 
-## ✨ Caratteristiche
+## Key features
 
-- 🌐 **Interfaccia web moderna** con Streamlit - UI pulita e intuitiva
-- 🔍 **Retrieval semantico** con embeddings Google (default: gemini-embedding-001)
-- 🧠 **Query rewriting** per migliorare il retrieval
-- 💾 **Vector store** Qdrant per memorizzazione efficiente
-- 🤖 **Generazione risposte** con Google Gemini 2.5 Flash
-- 💬 **Memory attiva** - mantiene il contesto della conversazione
-- 🔄 **Doppia interfaccia** - Web e terminale
-- 📝 **Pipeline modulare** facilmente estensibile
-- 🎨 **Design minimal** e user-friendly
+- Streamlit front end with multilingual UI and debugging tools
+- Semantic retrieval powered by Google embeddings (`gemini-embedding-001` by default)
+- Query rewriting to improve recall on ambiguous prompts
+- Qdrant vector store with dynamic dimension detection
+- Google Gemini 2.5 Flash for response generation with conversation memory
+- Dual interface: modern web experience and terminal chatbot
+- Modular pipelines for ingestion, retrieval, and generator orchestration
+- Optional integration with the official docs through the MCP server
 
-## 🏗️ Architettura
+## Architecture
 
-### Pipeline di Ingestion
+### Ingestion pipeline
 ```
-File Markdown → TextParser → NodeSplitter → ChunkEmbedder → Qdrant VectorStore
+Markdown FAQs → TextParser → NodeSplitter → ChunkEmbedder → Qdrant vector store
 ```
 
-### Pipeline di Retrieval (DagPipeline)
+### Retrieval pipeline (DagPipeline)
 ```
-Query Utente → ToolRewriter → Embedder → VectorStore Retrieval → Prompt Template → Generator (Gemini 2.5 Flash) + Memory
+User query → ToolRewriter → Embedder → Qdrant retrieval → Prompt template → Gemini 2.5 Flash + Memory
 ```
 
-### Vista d'insieme del RAG (FAQ + docs ufficiali)
-La pipeline completa è divisa in tre blocchi: ingestion delle FAQ locali, ingestion della documentazione ufficiale via MCP e retrieval/risposta finale.
+### RAG overview (FAQs + official docs)
+The system is split into FAQ ingestion, official documentation ingestion via MCP, and a retrieval/generation stack that merges both sources when available.
 
-#### Ingestion FAQ
+#### FAQ ingestion
 ```mermaid
 graph TD
   A1["Markdown FAQ<br/>(datapizza_faq.md, FAQ_Video.md, Scripts/*.md)"] --> P1[TextParser]
@@ -45,7 +41,7 @@ graph TD
   E1 --> Q1["Qdrant collection:<br/>datapizzai_faq"]
 ```
 
-#### Ingestion Docs (MCP)
+#### Documentation ingestion (MCP)
 ```mermaid
 graph TD
   B1["GitHub repo<br/>(datapizza-ai/docs)"] --> P2[TextParser]
@@ -54,10 +50,10 @@ graph TD
   E2 --> Q2["Qdrant collection:<br/>datapizza_official_docs"]
 ```
 
-#### Retrieval & Reasoning
+#### Retrieval and reasoning
 ```mermaid
 graph TD
-  U["Domanda utente"] --> RW["ToolRewriter<br/>(Gemini)"]
+  U["User question"] --> RW["ToolRewriter<br/>(Gemini)"]
   RW --> GE["Google Embedder"]
   GE --> VR1["Qdrant search<br/>datapizzai_faq"]
 
@@ -68,228 +64,167 @@ graph TD
   VR2 --> CTX
   CTX --> PR["Prompt Template"]
   PR --> LLM["Gemini 2.5 Flash"]
-  LLM --> OUT["Risposta finale"]
+  LLM --> OUT["Final answer"]
   MEM[(Memory)] <--> LLM
 
   APP["Streamlit app.py"] --> OUT
   TEST["test_mcp_retriever.py"] --> VR2
 ```
 
-## 🚀 Quick Start
+## Quick start
 
-### Opzione A: Interfaccia Web (Consigliata) 🌐
+### Option A: Web interface (recommended)
 
 ```bash
-# 1. Attiva l'environment
+# Activate the virtual environment
 source rag/bin/activate
 
-# 2. Configura .env con la tua API key OpenAI
+# Configure .env with your Google and OpenAI keys
 
-# 3. Avvia Qdrant (terminale separato)
+# Start Qdrant in another terminal
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
-# 4. Avvia il frontend web
+# Launch the Streamlit UI
 ./run_web.sh
-# oppure: streamlit run app.py
+# or
+streamlit run app.py
 ```
 
-L'interfaccia web si aprirà automaticamente nel browser! 🎉
-
-### Opzione B: Terminale 💻
+### Option B: Terminal chatbot
 
 ```bash
-# 1. Attiva l'environment
 source rag/bin/activate
 
-# 2. Configura .env con la tua API key Google (Gemini)
+# Set GOOGLE_API_KEY in .env
 
-# 3. Avvia Qdrant (terminale separato)
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
-# 4. Avvia il chatbot da terminale
 python chatbot_faq.py
-# oppure: ./run_chatbot.sh
+# or
+./run_chatbot.sh
 ```
 
-### Setup Completo (Prima Volta)
+### First-time setup
 
 ```bash
-# 1. Attiva l'environment virtuale
 source rag/bin/activate
-
-# 2. Installa le dipendenze
 pip install -r requirements.txt
 
-# 3. Configura le variabili d'ambiente
 cp .env.example .env
-# Modifica .env e inserisci la tua API key
+# add your API keys
 
-# 4. Avvia Qdrant
 docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
 
-# 5. Verifica il setup
-python test_setup.py
+python test_setup.py          # validate environment
+python ingest_faq.py          # index FAQ files
 
-# 6. Esegui l'ingestion delle FAQ
-python ingest_faq.py
-
-# 7. Avvia il chatbot (web o terminale)
-./run_web.sh          # Interfaccia web
-# oppure
-python chatbot_faq.py # Terminale
+./run_web.sh                  # Streamlit UI
+# or
+python chatbot_faq.py         # terminal mode
 ```
 
-## 💡 Esempi di Utilizzo
+## Example usage
 
 ```
-👤 Tu: Cosa differenzia Datapizza-AI da Langchain?
+You: What makes Datapizza-AI different from LangChain?
 
-🤖 Bot: La differenza principale con altri framework è il diverso livello
-di astrazione dei moduli. Langchain usa astrazioni troppo elevate che non
-permettono di uscire facilmente dai binari imposti...
+Bot: The main difference is the abstraction level of each module. LangChain
+keeps you on rails, while Datapizza-AI exposes low-level knobs so you can
+tune each step of your RAG workflow...
 
-👤 Tu: Supporta modelli open-source?
+You: Does it support open-source models?
 
-🤖 Bot: Sì, il framework supporta anche modelli Llama. Nella documentazione
-su docs.datapizza.ai puoi trovare le istruzioni per eseguire un client
-Llama o un server Llama in locale...
+Bot: Yes. The framework works with Llama models as documented in the official
+guides, where you can run a client or server locally...
 
-👤 Tu: Che cos'è la fotosintesi clorofilliana?
+You: What is photosynthesis?
 
-🤖 Bot: Non sono ancora state fatte domande a riguardo.
+Bot: Non sono ancora state fatte domande a riguardo.
 ```
 
-## 📁 Struttura del Progetto
+## Project structure
 
 ```
 datapizzaAI-RAG/
-├── app.py                    # 🌐 Frontend web (Streamlit) - NUOVO!
-├── chatbot_faq.py            # 🤖 Chatbot RAG core
-├── ingest_faq.py             # 📥 Script per ingestion FAQ
-├── datapizza_faq.md          # 📄 FAQ generali su Datapizza-AI
-├── FAQ_Video.md              # 🎥 FAQ estratte da video tutorial
-├── test_setup.py             # ✅ Script per verificare il setup
-├── test_chatbot.py           # 🧪 Test automatici
-├── check_qdrant.py           # 🔍 Verifica contenuto Qdrant
-├── run_web.sh                # 🌐 Avvio rapido frontend web - NUOVO!
-├── run_chatbot.sh            # 💻 Avvio rapido terminale
-├── requirements.txt          # 📦 Dipendenze Python
-├── .env                      # 🔐 Configurazione (da creare)
-├── .env.example              # 📋 Template configurazione
-├── .gitignore                # 🚫 Esclusioni Git
-├── README.md                 # 📖 Questo file
-├── START_HERE.md             # 🚀 Guida avvio rapido
-├── USAGE_GUIDE.md            # 📚 Guida utente dettagliata
-├── WEB_FEATURES.md           # 🌐 Caratteristiche frontend
-├── INTERFACE_PREVIEW.md      # 🎨 Anteprima interfaccia
-└── setup_instructions.md     # 🛠️ Istruzioni setup complete
+├── app.py                    # Streamlit front end
+├── chatbot_faq.py            # FAQ chatbot (Gemini + DagPipeline)
+├── chatbot_enhanced.py       # FAQ + MCP docs chatbot
+├── ingest_faq.py             # FAQ ingestion script
+├── official_docs_retriever.py# MCP retriever helper
+├── datapizza_faq.md          # Main FAQ file
+├── FAQ_Video.md              # FAQs extracted from video tutorials
+├── Scripts/*.md              # English transcripts, auto-tagged
+├── qdrant_config.py          # Qdrant helpers and collection setup
+├── run_web.sh / run_chatbot.sh
+├── tests/*.py                # Setup, chatbot, and MCP tests
+├── README.md, START_HERE.md, USAGE_GUIDE.md, etc.
+└── requirements.txt
 ```
 
-## 🛠️ Tecnologie Utilizzate
+## Technology stack
 
-- **[Datapizza-AI](https://docs.datapizza.ai/)** - Framework GenAI modulare
-- **[Streamlit](https://streamlit.io/)** - Framework per interfaccia web interattiva
-- **[Google Gemini](https://ai.google.dev/)** - Embeddings (gemini-embedding-001 di default) e LLM (Gemini 2.5 Flash)
-- **[Qdrant](https://qdrant.tech/)** - Vector database per similarity search
-- **Python 3.13+** - Linguaggio di programmazione
+- [Datapizza-AI](https://docs.datapizza.ai/) for pipelines, modules, and clients
+- [Streamlit](https://streamlit.io/) for the user interface
+- [Google Gemini](https://ai.google.dev/) for embeddings and LLM responses
+- [Qdrant](https://qdrant.tech/) for similarity search
+- Python 3.13 or newer
 
-## 📖 Componenti Principali
+## Main components
 
 ### ingest_faq.py
-Script che implementa la **IngestionPipeline** per:
-- Leggere i file markdown delle FAQ
-- Dividere il testo in chunks semantici
-- Generare embeddings con Google (gemini-embedding-001, 3072 dimensioni di default – personalizzabili impostando `FAQ_EMBEDDING_MODEL` o `FAQ_EMBEDDING_DIM`)
-- Includere automaticamente i copioni in inglese della cartella `Scripts/`, marcandoli con metadati `language="en"` e `type="scripts"`
-- Salvare nel vector store Qdrant
+Builds an `IngestionPipeline` that reads markdown FAQ files, splits content into semantically meaningful chunks, generates embeddings with Google Gemini, automatically includes English scripts under `Scripts/` with metadata (`language="en"`, `type="scripts"`), and stores everything in the `datapizzai_faq` Qdrant collection. The script detects embedding dimensionality at runtime so the vector store is always created with the correct size.
 
 ### chatbot_faq.py
-Implementa il chatbot usando **DagPipeline** con:
-- Query rewriting per migliorare il retrieval
-- Embedding della query
-- Retrieval semantico dei chunks rilevanti
-- Generazione risposta contestualizzata con Gemini 2.5 Flash
-- Memory per mantenere il contesto della conversazione
-- Fallback message quando non trova informazioni
+Implements a DagPipeline chatbot with query rewriting, vector retrieval, Gemini generation, and conversation memory. If no relevant information is returned, the answer falls back to “Non sono ancora state fatte domande a riguardo.” The class exposes parameters for `k`, `score_threshold`, maximum chunk size, and debug mode.
 
-## 🔧 Configurazione Avanzata
+### app.py
+Streamlit front end with multilingual support (Italian, English, German). It offers configuration toggles, statistics, debugging panels for retrieved chunks, and an optional hook for the official documentation if MCP indexing is available.
 
-### Parametri del Chatbot
+### chatbot_enhanced.py and official_docs_retriever.py
+Extended chatbot that merges FAQ chunks and documentation chunks retrieved through the MCP server and the `datapizza_official_docs` collection. It manages language-specific fallbacks, asynchronous calls, and fine-grained debug traces.
 
-Nel file `chatbot_faq.py` puoi modificare:
+## Advanced configuration
+
+You can tweak the chatbot behavior in `chatbot_faq.py`:
 
 ```python
-# Numero di chunks da recuperare
-k = 10
-
-# Soglia minima di similarity score
+k = 10               # number of chunks retrieved
 score_threshold = 0.5
-
-# Dimensione massima dei chunks
-max_char = 2000
+max_char = 2000      # chunk size for NodeSplitter
 ```
 
-### Modelli Alternativi
+To switch models, set environment variables (`FAQ_EMBEDDING_MODEL`, `FAQ_EMBEDDING_DIM`) or instantiate alternative clients such as `OpenAIClient` or `AnthropicClient`.
 
-Puoi cambiare i modelli Google con altre varianti:
+## Troubleshooting
 
-```python
-# Per embeddings - altre opzioni Google
-embedder = GoogleEmbedder(
-    model_name="gemini-embedding-001"  # Default attuale (imposta FAQ_EMBEDDING_MODEL per cambiarlo)
-)
+- **“GOOGLE_API_KEY not found”**  
+  Create `.env`, set `GOOGLE_API_KEY`, and reload the shell.
 
-# Per generazione - altri modelli Gemini
-client = GoogleClient(
-    model="gemini-2.5-flash"  # Gemini 2.5 Flash (attuale)
-)
+- **“Connection refused” when calling Qdrant**  
+  Ensure the Docker container is running: `docker ps | grep qdrant`.
 
-# Oppure altri provider (OpenAI, Anthropic, Mistral, etc.)
-from datapizza.clients.openai import OpenAIClient
-client = OpenAIClient(model="gpt-4o")
-```
+- **“Collection not found”**  
+  Run `python ingest_faq.py`. If you changed embedding dimensions, delete the existing collection first.
 
-## 🐛 Troubleshooting
+- **Bot always responds with the fallback**  
+  Verify ingestion logs, lower `score_threshold`, and confirm embeddings were created with the same model used at inference time.
 
-### "GOOGLE_API_KEY non trovata"
-→ Crea il file `.env` e inserisci la tua API key Google:
-```bash
-GOOGLE_API_KEY=your-google-api-key-here
-```
-→ Ottieni una chiave API da: https://ai.google.dev/
+## Resources
 
-### "Connection refused" (Qdrant)
-→ Verifica che Qdrant sia in esecuzione: `docker ps | grep qdrant`
-
-### "Collection not found"
-→ Esegui prima l'ingestion: `python ingest_faq.py`
-→ NOTA: Se hai già una collection con dimensioni 1536 (OpenAI), devi ricrearla!
-
-### Risposte sempre "Non sono ancora state fatte domande..."
-→ Verifica che l'ingestion sia andata a buon fine
-→ Prova ad abbassare la `score_threshold`
-→ Verifica che gli embeddings siano stati creati correttamente
-
-## 📚 Risorse
-
-- [Documentazione Datapizza-AI](https://docs.datapizza.ai/)
-- [Guida RAG](https://docs.datapizza.ai/0.0.2/Guides/RAG/rag/)
+- [Datapizza-AI documentation](https://docs.datapizza.ai/)
+- [RAG guide](https://docs.datapizza.ai/0.0.2/Guides/RAG/rag/)
 - [Google AI Studio](https://ai.google.dev/)
-- [Qdrant Documentation](https://qdrant.tech/documentation/)
-- [Gemini API Documentation](https://ai.google.dev/docs)
+- [Qdrant docs](https://qdrant.tech/documentation/)
+- [Gemini API docs](https://ai.google.dev/docs)
 
-## 🤝 Contribuire
+## Contributing
 
-Questo è un progetto di esempio. Sentiti libero di:
-- Aggiungere nuove FAQ
-- Migliorare i prompt
-- Sperimentare con diversi modelli
-- Estendere le funzionalità
+This project is meant as a working example. Feel free to add FAQs, experiment with new models, improve prompts, or extend the UI. Pull requests and issue reports are welcome.
 
-## 📝 Licenza
+## License
 
-Progetto di esempio per dimostrare le capacità di Datapizza-AI.
+Sample project demonstrating the Datapizza-AI framework. Refer to the repository license for details.
 
-## 👥 Autore
+## Author
 
-Progetto creato come esempio di utilizzo del framework [Datapizza-AI](https://github.com/datapizza-labs/datapizza-ai)
+Built as an example integration for the [Datapizza-AI](https://github.com/datapizza-labs/datapizza-ai) framework.
